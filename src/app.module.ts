@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostModule } from './post/post.module';
 import { CommentModule } from './comment/comment.module';
 import { AlertModule } from './alert/alert.module';
+import { PlaceModule } from './place/place.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AlertModule } from './alert/alert.module';
     PostModule,
     CommentModule,
     AlertModule,
+    PlaceModule,
   ],
   controllers: [],
   providers: [],
