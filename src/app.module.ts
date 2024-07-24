@@ -9,6 +9,8 @@ import { PlaceModule } from './place/place.module';
 import { CartModule } from './cart/cart.module';
 import { CustomModule } from './custom/custom.module';
 import { DiaryModule } from './diary/diary.module';
+import { MailModule } from './mail/mail.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -32,6 +34,10 @@ import { DiaryModule } from './diary/diary.module';
     CartModule,
     CustomModule,
     DiaryModule,
+    MailModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
   ],
   controllers: [],
   providers: [],
