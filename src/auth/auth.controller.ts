@@ -9,10 +9,10 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
-  async create(@Body() createAuthDto: CreateAuthDto) {
-    console.log(createAuthDto);
+  async create(@Body() loginData: CreateAuthDto) {
+    console.log(loginData);
     try {
-      await this.authService.create(createAuthDto);
+      return await this.authService.login(loginData);
     } catch (e) {
       if (e instanceof QueryFailedError) {
         console.log(e);

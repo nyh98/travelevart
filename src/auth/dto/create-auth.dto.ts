@@ -1,15 +1,30 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsNotEmpty,
+  IsObject,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+
+class User {
+  @IsString({ message: 'image는 문자열이어야 합니다' })
+  image: string;
+
+  @IsString({ message: 'name은 문자열이어야 합니다' })
+  name: string;
+}
 
 export class CreateAuthDto {
-  @IsNotEmpty({ message: '프로필 이미지가 없습니다' })
-  @IsString({ message: '잘못된 프로필 형식' })
-  profileImg: string;
-
   @IsNotEmpty({ message: '로그인 제공자가 없습니다' })
-  @IsString()
+  @IsString({ message: '제공자는 문자열 이여야 합니다' })
   provider: string;
 
-  @IsNotEmpty({ message: '이름이 없습니다' })
-  @IsString({ message: '문자 타입이 아닙니다' })
-  userName: string;
+  @IsNotEmpty({ message: 'uid가 없습니다' })
+  @IsString({ message: 'uid는 문자열 이여야 합니다' })
+  uid: string;
+
+  @IsObject({ message: '유저 정보는 객체여야 합니다' })
+  @ValidateNested()
+  @Type(() => User)
+  user: User;
 }

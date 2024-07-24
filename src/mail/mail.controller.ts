@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { MailService } from './mail.service';
 import { CreateMailDto } from './dto/create-mail.dto';
 import { UpdateMailDto } from './dto/update-mail.dto';
@@ -7,13 +15,11 @@ import { UpdateMailDto } from './dto/update-mail.dto';
 export class MailController {
   constructor(private readonly mailService: MailService) {}
 
-  @Post('/send')
-  async sendEmail(
-    @Body('text') text: string,
-  ) {
+  @Post()
+  async sendEmail(@Body('text') text: string) {
     await this.mailService.sendMail(text);
     return {
-      message: 'Email sent successfully'
+      message: 'Email sent successfully',
     };
   }
 }
