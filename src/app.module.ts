@@ -9,9 +9,13 @@ import { PlaceModule } from './place/place.module';
 import { CartModule } from './cart/cart.module';
 import { CustomModule } from './custom/custom.module';
 import { DiaryModule } from './diary/diary.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     AuthModule,
     UserModule,
     TypeOrmModule.forRoot({

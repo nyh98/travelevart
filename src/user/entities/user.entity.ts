@@ -8,12 +8,15 @@ export class User {
   @Column()
   profile_img: string;
 
-  @Column()
+  @Column('varchar', { length: 100 })
   provider: string;
 
-  @Column({ unique: true })
+  @Column('varchar', { unique: true, length: 100 })
   user_name: string;
 
-  @Column({ type: 'tinyint', default: 0 })
+  @Column()
+  uid: string;
+
+  @Column({ type: 'tinyint', default: 0, width: 1 })
   role: number;
 }
