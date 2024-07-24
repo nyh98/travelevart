@@ -16,11 +16,11 @@ import { DiaryModule } from './diary/diary.module';
     UserModule,
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
+      host: 'travelevart-db.cv4i2yycua0x.ap-northeast-2.rds.amazonaws.com',
       port: 3306,
-      username: 'root',
-      password: '1234',
-      database: 'test',
+      username: 'admin',
+      password: 'ckstlr0504!',
+      database: 'travelevart_DB',
       synchronize: true,
       autoLoadEntities: true,
       retryDelay: 3000000, //임시로 db연결 재시도 타임 겁나 늘려놓았음
