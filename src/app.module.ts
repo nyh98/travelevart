@@ -6,6 +6,9 @@ import { PostModule } from './post/post.module';
 import { CommentModule } from './comment/comment.module';
 import { AlertModule } from './alert/alert.module';
 import { PlaceModule } from './place/place.module';
+import { CartModule } from './cart/cart.module';
+import { CustomModule } from './custom/custom.module';
+import { DiaryModule } from './diary/diary.module';
 
 @Module({
   imports: [
@@ -26,6 +29,9 @@ import { PlaceModule } from './place/place.module';
     CommentModule,
     AlertModule,
     PlaceModule,
+    CartModule,
+    CustomModule,
+    DiaryModule,
   ],
   controllers: [],
   providers: [],
