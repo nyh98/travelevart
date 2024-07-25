@@ -14,11 +14,7 @@ class User {
   name: string;
 }
 
-export class CreateAuthDto {
-  @IsNotEmpty({ message: '로그인 제공자가 없습니다' })
-  @IsString({ message: '제공자는 문자열 이여야 합니다' })
-  provider: string;
-
+export class KakaoAuthDto {
   @IsNotEmpty({ message: 'uid가 없습니다' })
   @IsString({ message: 'uid는 문자열 이여야 합니다' })
   uid: string;
