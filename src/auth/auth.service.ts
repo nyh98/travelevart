@@ -1,66 +1,190 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { KakaoAuthDto } from './dto/kakao-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
+import { LocalJoinAuthDto, LocalLoginAuthDto } from './dto/local-auth.dto';
+import * as bcrypt from 'bcrypt';
+import { HttpService } from '@nestjs/axios';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
     private JwtService: JwtService,
+    private HttpService: HttpService,
+    private RedisService: RedisService,
   ) {}
 
-  async login(loginData: CreateAuthDto) {
+  async kakaoLogin(loginData: KakaoAuthDto) {
     const user = await this.userRepository.findOne({
-      where: { uid: loginData.uid, provider: loginData.provider },
+      where: { uid: loginData.uid, provider: 'kakao' },
     });
 
-    let payload: { userId: number; provider: string; uid: string };
-
-    //유저가 존재하면
-    if (user) {
-      payload = { userId: user.id, provider: user.provider, uid: user.uid };
-    } else {
+    try {
       //유저가 존재하지 않으면 DB 업데이트
-      const result = await this.userRepository.insert({
-        profile_img: loginData.user.image,
-        provider: loginData.provider,
-        user_name: loginData.user.name,
-        uid: loginData.uid,
-      });
+      if (!user) {
+        const result = await this.userRepository.insert({
+          profile_img: loginData.user.image,
+          provider: 'kakao',
+          user_name: loginData.user.name,
+          uid: loginData.uid,
+        });
 
-      payload = {
-        userId: result.raw.insertId,
-        provider: loginData.provider,
-        uid: loginData.uid,
-      };
+        return {
+          userId: result.raw.insertId,
+          provider: 'kakao',
+          uid: loginData.uid,
+        };
+      }
+    } catch (e) {
+      if (
+        e instanceof QueryFailedError &&
+        e.driverError.code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException('중복된 이메일 또는 닉네임 입니다');
+      }
+
+      throw new InternalServerErrorException('서버에러 관리자에게 문의 바람');
     }
-    const accessToken = await this.JwtService.signAsync(payload);
 
     return {
-      userId: payload.userId,
-      provider: payload.provider,
-      uid: payload.uid,
-      accessToken,
+      userId: user.id,
+      provider: user.provider,
+      uid: user.uid,
     };
   }
 
-  // findAll() {
-  //   return `This action returns all auth`;
-  // }
+  async localJoin(localJoinData: LocalJoinAuthDto) {
+    await this.userRepository.insert({
+      provider: 'local',
+      user_name: localJoinData.nickname,
+      email: localJoinData.email,
+      password: await bcrypt.hash(localJoinData.password, 12),
+    });
+  }
 
-  // findOne(id: number) {
-  //   return `This action returns a #${id} auth`;
-  // }
+  async localLogin(localLoginData: LocalLoginAuthDto) {
+    console.log(localLoginData);
+    const user = await this.userRepository.findOne({
+      where: { email: localLoginData.email },
+    });
 
-  // update(id: number, updateAuthDto: UpdateAuthDto) {
-  //   return `This action updates a #${id} auth`;
-  // }
+    if (!user) {
+      throw new NotFoundException('이메일이 틀립니다');
+    }
 
-  // remove(id: number) {
-  //   return `This action removes a #${id} auth`;
-  // }
+    const isValidPwd = await bcrypt.compare(
+      localLoginData.password,
+      user.password,
+    );
+
+    if (!isValidPwd) {
+      throw new BadRequestException('비밀번호가 틀립니다');
+    }
+
+    const payload = { userId: user.id };
+    const accessToken = await this.JwtService.signAsync(payload);
+    const refeshToken = await this.JwtService.signAsync(payload, {
+      expiresIn: '7d',
+    });
+
+    this.RedisService.setRefreshToken(
+      `${user.id}`,
+      refeshToken,
+      60 * 60 * 24 * 7,
+    );
+    return {
+      userInfo: {
+        userId: user.id,
+        email: user.email,
+        name: user.user_name,
+        profileImg: user.profile_img || '프로필',
+      },
+      provider: user.provider,
+      accessToken: accessToken,
+      refreshToken: refeshToken,
+    };
+  }
+
+  async validKakaoToken(kakaoAccessToken: string) {
+    try {
+      const response = await this.HttpService.axiosRef.get<{
+        expiresInMillis: number;
+        id: number;
+        expires_in: number;
+        app_id: number;
+        appId: number;
+      }>('https://kapi.kakao.com/v1/user/access_token_info', {
+        headers: { Authorization: `Bearer ${kakaoAccessToken}` },
+      });
+
+      if (response.status === 200) {
+        const user = await this.userRepository.findOne({
+          where: { uid: response.data.id.toString() },
+        });
+        if (user) {
+          return { user };
+        }
+        throw new NotFoundException('서비스에 가입되지 않았습니다');
+      }
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async validLocalToken(LocalAccessTokenToken: string) {
+    try {
+      const decoded = await this.JwtService.verifyAsync<{ userId: number }>(
+        LocalAccessTokenToken,
+      );
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.userId },
+      });
+      return { user };
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async validRefreshToken(refreshToken: string, userId: number) {
+    try {
+      const token = await this.RedisService.getRefreshToken(userId);
+
+      if (!token || token !== refreshToken) {
+        throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+      }
+
+      const decode = await this.JwtService.verifyAsync<{ userId: number }>(
+        refreshToken,
+      );
+      const payload = { userId: decode.userId };
+      const newAccessToken = await this.JwtService.signAsync(payload);
+      return newAccessToken;
+    } catch (e) {
+      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+    }
+  }
+
+  async logout(refreshToken: string) {
+    try {
+      const decoded = await this.JwtService.verifyAsync<{ userId: number }>(
+        refreshToken,
+      );
+      const user = await this.userRepository.findOne({
+        where: { id: decoded.userId },
+      });
+      await this.RedisService.deleteRefreshToken(user.id);
+    } catch (e) {}
+  }
 }
