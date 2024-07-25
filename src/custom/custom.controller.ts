@@ -3,7 +3,7 @@ import { CustomService } from './custom.service';
 import { CreateCustomDto } from './dto/create-custom.dto';
 import { UpdateCustomDto } from './dto/update-custom.dto';
 
-@Controller('custom')
+@Controller('customs')
 export class CustomController {
   constructor(private readonly customService: CustomService) {}
 
