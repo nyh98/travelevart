@@ -70,4 +70,13 @@ export class CartService {
       },
     };
   }
+
+  async getAllCartItems(): Promise<any[]> {
+    const cartItems = await this.cartRepository.find({ relations: ['place'] });
+
+    return cartItems.map(cartItem => ({
+      cart_id: cartItem.cart_id,
+      placeId: cartItem.place.placeId,
+    }));
+  }
 }
