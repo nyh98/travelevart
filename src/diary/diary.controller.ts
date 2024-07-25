@@ -3,7 +3,7 @@ import { DiaryService } from './diary.service';
 import { CreateDiaryDto } from './dto/create-diary.dto';
 import { UpdateDiaryDto } from './dto/update-diary.dto';
 
-@Controller('diary')
+@Controller('diaries')
 export class DiaryController {
   constructor(private readonly diaryService: DiaryService) {}
 
