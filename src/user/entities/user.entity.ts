@@ -6,9 +6,9 @@ import { Postlike } from '../../post/entities/postlike.entity'
 export class User {
     @PrimaryGeneratedColumn()
     id: number;
-
+  
     @Column({ nullable: true })
-    profile_img: string;
+    profile_img: string | null;
 
     @Column('varchar', { length: 100 })
     provider: string;
@@ -17,13 +17,13 @@ export class User {
     user_name: string;
 
     @Column({ nullable: true })
-    uid: string;
+    uid: string | null;
 
-    @Column({ type: 'tinyint', default: 0 })
+    @Column({ type: 'tinyint', default: 0, width: 1 })
     role: number;
 
-    @Column({ nullable: true })
-    email: string;
+    @Column({ nullable: true, unique: true })
+    email: string | null;
 
     @Column({ nullable: true })
     password: string;

@@ -11,6 +11,7 @@ import { CustomModule } from './custom/custom.module';
 import { DiaryModule } from './diary/diary.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     CustomModule,
     DiaryModule,
     MailModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [],
