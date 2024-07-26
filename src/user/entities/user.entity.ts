@@ -1,22 +1,36 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Post } from '../../post/entities/post.entity'
+import { Postlike } from '../../post/entities/postlike.entity'
 
-@Entity()
+@Entity('user')
 export class User {
-  @PrimaryGeneratedColumn('increment', { unsigned: true })
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  profile_img: string;
+    @Column({ nullable: true })
+    profile_img: string;
 
-  @Column('varchar', { length: 100 })
-  provider: string;
+    @Column('varchar', { length: 100 })
+    provider: string;
 
-  @Column('varchar', { unique: true, length: 100 })
-  user_name: string;
+    @Column('varchar', { length: 100 })
+    user_name: string;
 
-  @Column()
-  uid: string;
+    @Column({ nullable: true })
+    uid: string;
 
-  @Column({ type: 'tinyint', default: 0, width: 1 })
-  role: number;
+    @Column({ type: 'tinyint', default: 0 })
+    role: number;
+
+    @Column({ nullable: true })
+    email: string;
+
+    @Column({ nullable: true })
+    password: string;
+
+    @OneToMany(() => Post, post => post.user)
+    posts: Post[];
+
+    @OneToMany(() => Postlike, postlike => postlike.user)
+    postlikes: Postlike[];
 }
