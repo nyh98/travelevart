@@ -102,11 +102,11 @@ export class PostService {
     }
   }
 
-  async createPost(postPostsDto: PostPostsDto) {
+  async createPost(postPostsDto: PostPostsDto, user_id: number) {
     try {
       const { title, contents, travelRoute_id } = postPostsDto;
       const newPost = this.postRepository.create({
-        user_id: 11, // fix. 토큰으로 유저번호 받아야함
+        user_id,
         title,
         contents,
         travelRoute_id
