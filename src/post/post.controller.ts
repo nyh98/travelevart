@@ -51,9 +51,8 @@ export class PostController {
   // 게시글 작성
   @Post()
   async createPost(@Body() postPostsDto: PostPostsDto, @Req() req: Request) {
-    console.log(req.user);
     try {
-      return await this.postService.createPost(postPostsDto);
+      return await this.postService.createPost(postPostsDto, req.user.id);
     } catch (error) {
       throw new HttpException(
         error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
@@ -67,6 +66,7 @@ export class PostController {
   async modifyPost(
     @Param('id', ParseIntPipe) id: number,
     @Body() postPostsDto: PostPostsDto,
+    @Req() req: Request
   ) {
     try {
       postPostsDto.post_id = id;
@@ -94,10 +94,10 @@ export class PostController {
   @Post(':id/likes')
   async likePost(
     @Param('id', ParseIntPipe) post_id: number,
-    @Body('user_id', ParseIntPipe) user_id: number,
+    @Req() req: Request
   ) {
     try {
-      return await this.postService.likePost(post_id, user_id);
+      return await this.postService.likePost(post_id, req.user.id);
     } catch (error) {
       throw new HttpException(
         error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
@@ -109,10 +109,10 @@ export class PostController {
   @Delete(':id/likes')
   async unlikePost(
     @Param('id', ParseIntPipe) post_id: number,
-    @Body('user_id', ParseIntPipe) user_id: number,
+    @Req() req: Request
   ) {
     try {
-      return await this.postService.unlikePost(post_id, user_id);
+      return await this.postService.unlikePost(post_id, req.user.id);
     } catch (error) {
       throw new HttpException(
         error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
