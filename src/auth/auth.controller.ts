@@ -50,7 +50,7 @@ export class AuthController {
         data.userId,
       );
     }
-    console.log(newAccessToken);
+
     return { accessToken: newAccessToken };
   }
 
@@ -61,7 +61,7 @@ export class AuthController {
     }
 
     const refreshToken = credentialData.split(' ')[1];
-    console.log(refreshToken);
+
     await this.authService.logout(refreshToken);
 
     return { message: '로그아웃 완료' };

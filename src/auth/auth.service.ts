@@ -80,7 +80,6 @@ export class AuthService {
   }
 
   async localLogin(localLoginData: LocalLoginAuthDto) {
-    console.log(localLoginData);
     const user = await this.userRepository.findOne({
       where: { email: localLoginData.email },
     });
