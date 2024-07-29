@@ -180,7 +180,7 @@ export class AuthService {
 
       const token = await this.RedisService.getRefreshToken(decode.userId);
 
-      if (!token) {
+      if (!token || token !== refreshToken) {
         return false;
       }
 
