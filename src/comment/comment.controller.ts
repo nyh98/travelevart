@@ -1,34 +1,75 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, ParseIntPipe, Query, Req } from '@nestjs/common';
 import { CommentService } from './comment.service';
-import { CreateCommentDto } from './dto/create-comment.dto';
-import { UpdateCommentDto } from './dto/update-comment.dto';
+import { Request } from 'express';
+import { CreateCommentDto } from './dto/createComment.dto';
 
-@Controller('comment')
+@Controller('comments')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  @Post()
-  create(@Body() createCommentDto: CreateCommentDto) {
-    return this.commentService.create(createCommentDto);
+  // 댓글 조회
+  @Get(':postId')
+  async getComments(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Query('page', ParseIntPipe) page: number = 1,
+  ) {
+    try {
+      return this.commentService.getComments(postId, page);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  @Get()
-  findAll() {
-    return this.commentService.findAll();
+  // 댓글 쓰기
+  @Post(':postId')
+  async createComment(
+    @Param('postId', ParseIntPipe) postId: number,
+    @Body() createCommentDto: CreateCommentDto,
+    @Req() req: Request
+  ) {
+    try {
+      return await this.commentService.createComment(postId, createCommentDto.contents, req.user.id)
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.commentService.findOne(+id);
+  // 댓글 수정
+  @Patch(':commentId')
+  async modifyPost(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Body() createCommentDto: CreateCommentDto,
+    @Req() req: Request
+  ) {
+    try {
+      return await this.commentService.modifyComment(commentId, createCommentDto.contents, req.user.id);
+    } catch (error) {
+      throw new HttpException(
+        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCommentDto: UpdateCommentDto) {
-    return this.commentService.update(+id, updateCommentDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.commentService.remove(+id);
+  // 댓글 삭제
+  @Delete(':commentId')
+  async deleteComment(
+    @Param('commentId', ParseIntPipe) commentId: number,
+    @Req() req: Request
+  ) {
+    try {
+      return await this.commentService.deleteComment(commentId, req.user.id);
+    } catch (error) {
+      throw new HttpException(
+        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

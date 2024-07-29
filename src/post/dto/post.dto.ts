@@ -49,7 +49,7 @@ export interface PostDetailDto {
     author: string;
     title: string;
     views: number;
-    commentsCount: number;
+    commentCount: number;
     created_at: Date;
     travelRoute_id: number;
     like: number;

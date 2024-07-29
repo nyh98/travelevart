@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { GetPostsDto, PostDetailDto, PostPostsDto } from './dto/post.dto';
 import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
@@ -11,6 +11,7 @@ export class PostService {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
+    private readonly dataSource: DataSource,
     @InjectRepository(Postlike)
     private readonly likeRepository: Repository<Postlike>,
     @InjectRepository(User)
@@ -30,20 +31,16 @@ export class PostService {
 
     try {
       if (target === '전체 게시글') {
-        qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
-        qb.orderBy('post.created_at', 'DESC');
-      }
-
-      else if (!searchName) {
-        if (target !== '전체 게시글') {
-          if (target === '인기 여행글') {
-            // fix. 인기 여행글 알고리즘 추가해야됨
-            qb.andWhere('post.custom_id IS NOT NULL');
-          } else if (target === '인기 똥글') {
-            // fix. 인기 똥글 알고리즘 추가해야됨
-            qb.andWhere('post.custom_id IS NULL');
-          }
+        if (searchName && searchName.trim() !== '') {
+          qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
         }
+        qb.orderBy('post.created_at', 'DESC');
+      } else if (target === '인기 여행글') {
+        qb.andWhere('post.custom_id IS NOT NULL');
+        qb.orderBy('post.custom_id', 'DESC'); // 인기 여행글에 대한 정렬 기준
+      } else if (target === '인기 똥글') {
+        qb.andWhere('post.custom_id IS NULL');
+        qb.orderBy('post.created_at', 'DESC'); // 인기 똥글에 대한 정렬 기준
       }
 
       // 페이지네이션
@@ -55,12 +52,30 @@ export class PostService {
       // 전체 페이지 수 계산
       const totalPage = Math.ceil(total / pageSize);
 
+      // 댓글 수 불러오기
+      const postIds = posts.map(post => post.id);
+      const commentCountQuery = `
+        SELECT post_id, COUNT(*) AS commentCount
+        FROM comment
+        WHERE post_id IN (${postIds.join(', ')})
+        GROUP BY post_id
+      `;
+      const commentCountResult = await this.dataSource.query(commentCountQuery);
+
+      const commentsCountMap = commentCountResult.reduce((acc, row) => {
+        acc[row.post_id] = Number(row.commentCount);
+        return acc;
+      }, {});
+
+
+      // 댓글 수 불러오기
+
       const postDetail = posts.map(post => ({
         id: post.id,
         author: `user${post.user_id}`, // fix. 유저번호로 닉네임 받아오는 SQL 추가해야됨
         title: post.title,
         views: post.view_count,
-        commentsCount: 0, // fix. 댓글 DB에서 받오는거 추가해야됨
+        commentCount: commentsCountMap[post.id] || 0,
         created_at: post.created_at,
         travelRoute_id: post.travelRoute_id, // fix. 커스텀 여행 DB에서 받아서 추가해야됨(프론트분들에게 0보다 크면 true로 바꿔달라하기~)
         like: 0, // fix. 좋아요 DB에서 받아오는거 추가해야됨
@@ -88,7 +103,7 @@ export class PostService {
         author: `user${post.user_id}`, // fix. 유저번호로 닉네임 받아오는 SQL 추가해야됨
         title: post.title,
         views: post.view_count,
-        commentsCount: 0, // fix. 댓글 DB에서 받오는거 추가해야됨
+        commentCount: 0, // fix. 댓글 DB에서 받오는거 추가해야됨
         created_at: post.created_at,
         travelRoute_id: 0, // fix. 커스텀 여행 DB에서 받아서 추가해야됨
         contents: post.contents,
