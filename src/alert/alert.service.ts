@@ -4,7 +4,7 @@ import { Comment } from 'src/comment/entities/comment.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { Postlike } from 'src/post/entities/postlike.entity';
 import { User } from 'src/user/entities/user.entity';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AlertService {
@@ -37,33 +37,40 @@ export class AlertService {
         };
       }
 
-      // 댓글과 좋아요 데이터를 한 번의 쿼리로 가져오기
-      const alerts = await this.postRepository.query(`
-        SELECT 
-          user.profile_img AS userImage,
-          user.user_name AS userNickname,
-          '댓글' AS alertType,
-          post.title AS postName,
-          comment.contents AS contents, 
-          comment.created_at AS created_at
-        FROM comment 
-        LEFT JOIN user ON comment.user_id = user.id
-        LEFT JOIN post ON comment.post_id = post.id
-        WHERE comment.post_id IN (?) AND comment.check = false
-        UNION ALL
-        SELECT 
-          user.profile_img AS userImage, 
-          user.user_name AS userNickname, 
-          '좋아요' AS alertType, 
-          post.title AS postName,
-          '새로운 좋아요가 있습니다.' AS contents, 
-          postlike.created_at AS created_at   
-        FROM postlike 
-        LEFT JOIN user ON postlike.user_id = user.id
-        LEFT JOIN post ON postlike.post_id = post.id
-        WHERE postlike.post_id IN (?) AND postlike.check = false
-        ORDER BY created_at DESC
-      `, [postIds, postIds]);
+      // 댓글 알림 쿼리
+      const commentAlerts = await this.commentRepository.createQueryBuilder('comment')
+        .select([
+          'user.profile_img AS userImage',
+          'user.user_name AS userNickname',
+          "'댓글' AS alertType",
+          'post.title AS postName',
+          'comment.contents AS contents',
+          'comment.created_at AS created_at'
+        ])
+        .leftJoin('comment.user', 'user')
+        .leftJoin('comment.post', 'post')
+        .where('comment.post_id IN (:...postIds)', { postIds })
+        .andWhere('comment.check = false')
+        .getRawMany();
+
+      // 좋아요 알림 쿼리
+      const likeAlerts = await this.postlikeRepository.createQueryBuilder('postlike')
+        .select([
+          'user.profile_img AS userImage',
+          'user.user_name AS userNickname',
+          "'좋아요' AS alertType",
+          'post.title AS postName',
+          "'새로운 좋아요가 있습니다.' AS contents",
+          'postlike.created_at AS created_at'
+        ])
+        .leftJoin('postlike.user', 'user')
+        .leftJoin('postlike.post', 'post')
+        .where('postlike.post_id IN (:...postIds)', { postIds })
+        .andWhere('postlike.check = false')
+        .getRawMany();
+
+      // 두 쿼리 결과를 합치고 최신순으로 정렬
+      const alerts = [...commentAlerts, ...likeAlerts].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       // 최신순으로 정렬된 데이터 반환
       return {

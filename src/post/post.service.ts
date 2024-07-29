@@ -5,6 +5,7 @@ import { DataSource, Repository } from 'typeorm';
 import { GetPostsDto, PostDetailDto, PostPostsDto } from './dto/post.dto';
 import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
+import { Comment } from 'src/comment/entities/comment.entity';
 
 @Injectable()
 export class PostService {
@@ -16,11 +17,23 @@ export class PostService {
     private readonly likeRepository: Repository<Postlike>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Comment)
+    private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number}> {
+  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;
-    const qb = this.postRepository.createQueryBuilder('post'); // SELECT * FROM post
+    if (!page) page = 1;
+    if (!pageSize) pageSize = 10;
+
+    const qb = this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.user', 'user')
+      .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
+      .leftJoin('post.postlike', 'postlike') // 좋아요 수를 계산하기 위한 조인
+      .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
+      .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
+      .groupBy('post.id') // 게시물별로 그룹화
+      .addGroupBy('user.id'); // 작성자별로 그룹화
 
     if (!target) {
       target = '전체 게시글';
@@ -47,38 +60,23 @@ export class PostService {
       qb.skip((page - 1) * pageSize).take(pageSize);
 
       // 쿼리 실행 및 결과 가져오기
-      const [posts, total] = await qb.getManyAndCount();
+      const result = await qb.getRawAndEntities();
+      const rawPosts = result.raw;
+      const posts = result.entities;
 
       // 전체 페이지 수 계산
-      const totalPage = Math.ceil(total / pageSize);
+      const totalPage = Math.ceil(posts.length / pageSize);
 
-      // 댓글 수 불러오기
-      const postIds = posts.map(post => post.id);
-      const commentCountQuery = `
-        SELECT post_id, COUNT(*) AS commentCount
-        FROM comment
-        WHERE post_id IN (${postIds.join(', ')})
-        GROUP BY post_id
-      `;
-      const commentCountResult = await this.dataSource.query(commentCountQuery);
-
-      const commentsCountMap = commentCountResult.reduce((acc, row) => {
-        acc[row.post_id] = Number(row.commentCount);
-        return acc;
-      }, {});
-
-
-      // 댓글 수 불러오기
-
-      const postDetail = posts.map(post => ({
-        id: post.id,
-        author: `user${post.user_id}`, // fix. 유저번호로 닉네임 받아오는 SQL 추가해야됨
-        title: post.title,
-        views: post.view_count,
-        commentCount: commentsCountMap[post.id] || 0,
-        created_at: post.created_at,
-        travelRoute_id: post.travelRoute_id, // fix. 커스텀 여행 DB에서 받아서 추가해야됨(프론트분들에게 0보다 크면 true로 바꿔달라하기~)
-        like: 0, // fix. 좋아요 DB에서 받아오는거 추가해야됨
+      // 게시물 상세 정보 구성
+      const postDetail = rawPosts.map((rawPost, index) => ({
+        id: posts[index].id,
+        author: posts[index].user.user_name,
+        title: posts[index].title,
+        views: posts[index].view_count,
+        commentCount: parseInt(rawPost.commentCount, 10) || 0, // 조인 결과 사용
+        created_at: posts[index].created_at,
+        travelRoute_id: posts[index].travelRoute_id, // 커스텀 여행 DB에서 받아서 추가해야됨
+        like: parseInt(rawPost.likeCount, 10) || 0, // 조인 결과 사용
       }));
 
       // 응답 데이터 구조화
@@ -88,32 +86,45 @@ export class PostService {
         totalPage: totalPage,
       };
     } catch (error) {
-      throw new HttpException('삐빅 서버 에러입니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error in markAlertsAsRead:', error); // 에러 로그 추가
+      throw new HttpException(`GET /posts 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     };
   };
 
   async getDetailPost(id: number): Promise<PostDetailDto> {
     try {
-      const post = await this.postRepository.findOne({ where: { id } });
+      // 조회수를 1 증가시키는 쿼리 실행
+      await this.postRepository.increment({ id }, 'view_count', 1);
+
+      const post = await this.postRepository.createQueryBuilder('post')
+        .leftJoinAndSelect('post.user', 'user')
+        .leftJoin('post.comment', 'comment')
+        .leftJoin('post.postlike', 'postlike')
+        .where('post.id = :id', { id })
+        .addSelect('COUNT(comment.id) AS commentCount')
+        .addSelect('COUNT(postlike.id) AS likeCount')
+        .groupBy('post.id')
+        .addGroupBy('user.id')
+        .getRawOne();
+
       if (!post) {
         throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
       }
+
       return {
-        id: post.id,
-        author: `user${post.user_id}`, // fix. 유저번호로 닉네임 받아오는 SQL 추가해야됨
-        title: post.title,
-        views: post.view_count,
-        commentCount: 0, // fix. 댓글 DB에서 받오는거 추가해야됨
-        created_at: post.created_at,
-        travelRoute_id: 0, // fix. 커스텀 여행 DB에서 받아서 추가해야됨
-        contents: post.contents,
-        like: 0, // fix. 좋아요 DB에서 받아오는거 추가해야됨
+        id: post.post_id,
+        author: post.user_user_name,
+        title: post.post_title,
+        views: post.post_view_count + 1, // 이미 증가된 조회수를 반영
+        commentCount: parseInt(post.commentCount, 10) || 0,
+        created_at: post.post_created_at,
+        travelRoute_id: post.post_travelRoute_id || 0,
+        contents: post.post_contents,
+        like: parseInt(post.likeCount, 10) || 0,
       };
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException('Database query failed', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error:', error); // 에러 로그 추가
+      throw new HttpException(`GET /posts/:id 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
