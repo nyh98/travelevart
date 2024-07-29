@@ -3,9 +3,9 @@ import {
   Body,
   Post,
   HttpCode,
-  Get,
   Headers,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { KakaoAuthDto } from './dto/kakao-auth.dto';
@@ -38,17 +38,24 @@ export class AuthController {
   async refreshToken(@Body() data: RefreshTokenDto) {
     let newAccessToken: string;
 
-    if (data.provider === 'kakao') {
-      newAccessToken = await this.authService.validKakaoRefreshToken(
-        data.refreshToken,
-      );
+    //카카오 토큰 재발급 요청
+    const isValidKakaoRefreshToken =
+      await this.authService.validKakaoRefreshToken(data.refreshToken);
+    if (isValidKakaoRefreshToken) {
+      newAccessToken = isValidKakaoRefreshToken.newAccessToken;
     }
 
-    if (data.provider === 'local') {
-      newAccessToken = await this.authService.validLocalRefreshToken(
-        data.refreshToken,
-        data.userId,
-      );
+    //만약 카카오가 아니라고 하면 로컬 토큰 재발급
+    const isValidLocalRefreshToken =
+      await this.authService.validLocalRefreshToken(data.refreshToken);
+
+    if (isValidLocalRefreshToken) {
+      newAccessToken = isValidLocalRefreshToken.newAccessToken;
+    }
+
+    //카카오, 로컬 둘다 유효하지 않다면 401
+    if (!newAccessToken) {
+      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
     }
 
     return { accessToken: newAccessToken };

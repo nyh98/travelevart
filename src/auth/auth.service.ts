@@ -172,22 +172,23 @@ export class AuthService {
     }
   }
 
-  async validLocalRefreshToken(refreshToken: string, userId: number) {
+  async validLocalRefreshToken(refreshToken: string) {
     try {
-      const token = await this.RedisService.getRefreshToken(userId);
-
-      if (!token || token !== refreshToken) {
-        throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
-      }
-
       const decode = await this.JwtService.verifyAsync<{ userId: number }>(
         refreshToken,
       );
+
+      const token = await this.RedisService.getRefreshToken(decode.userId);
+
+      if (!token) {
+        return false;
+      }
+
       const payload = { userId: decode.userId };
       const newAccessToken = await this.JwtService.signAsync(payload);
-      return newAccessToken;
+      return { newAccessToken };
     } catch (e) {
-      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+      return false;
     }
   }
 
@@ -212,9 +213,9 @@ export class AuthService {
 
       newAccessToken = response.data.access_token;
     } catch (e) {
-      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+      return false;
     }
-    return newAccessToken;
+    return { newAccessToken };
   }
 
   async logout(refreshToken: string) {
