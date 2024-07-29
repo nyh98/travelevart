@@ -1,8 +1,17 @@
-import { Controller, Body, Post, HttpCode, Get, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Body,
+  Post,
+  HttpCode,
+  Get,
+  Headers,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { KakaoAuthDto } from './dto/kakao-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LocalJoinAuthDto, LocalLoginAuthDto } from './dto/local-auth.dto';
+import { RefreshTokenDto } from './dto/refresh-token-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,21 +34,36 @@ export class AuthController {
     return this.authService.localLogin(loginData);
   }
 
-  @Post('/local/token')
-  async refreshToken(
-    @Headers('Authorization') refreshToken: string,
-    @Body('userId') userId: number,
-  ) {
-    const newAccessToken = await this.authService.validRefreshToken(
-      refreshToken,
-      userId,
-    );
+  @Post('/token')
+  async refreshToken(@Body() data: RefreshTokenDto) {
+    let newAccessToken: string;
+
+    if (data.provider === 'kakao') {
+      newAccessToken = await this.authService.validKakaoRefreshToken(
+        data.refreshToken,
+      );
+    }
+
+    if (data.provider === 'local') {
+      newAccessToken = await this.authService.validLocalRefreshToken(
+        data.refreshToken,
+        data.userId,
+      );
+    }
+
     return { accessToken: newAccessToken };
   }
 
   @Post('/local/logout')
-  async logout(@Headers('Authorization') refreshToken: string) {
+  async logout(@Headers('Authorization') credentialData: string) {
+    if (!credentialData) {
+      throw new BadRequestException('인증 정보가 없습니다');
+    }
+
+    const refreshToken = credentialData.split(' ')[1];
+
     await this.authService.logout(refreshToken);
+
     return { message: '로그아웃 완료' };
   }
 }
