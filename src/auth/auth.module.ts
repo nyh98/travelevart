@@ -16,7 +16,6 @@ import { RedisModule } from 'src/redis/redis.module';
       global: true,
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        expiresIn: '15m',
       }),
       inject: [ConfigService],
     }),
