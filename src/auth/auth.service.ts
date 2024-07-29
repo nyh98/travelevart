@@ -16,6 +16,7 @@ import { LocalJoinAuthDto, LocalLoginAuthDto } from './dto/local-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
 import { RedisService } from 'src/redis/redis.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +25,7 @@ export class AuthService {
     private JwtService: JwtService,
     private HttpService: HttpService,
     private RedisService: RedisService,
+    private ConfigService: ConfigService,
   ) {}
 
   async kakaoLogin(loginData: KakaoAuthDto) {
@@ -34,15 +36,17 @@ export class AuthService {
     try {
       //유저가 존재하지 않으면 DB 업데이트
       if (!user) {
-        const result = await this.userRepository.insert({
+        const userEntity = this.userRepository.create({
           profile_img: loginData.user.image,
           provider: 'kakao',
           user_name: loginData.user.name,
           uid: loginData.uid,
         });
 
+        const result = await this.userRepository.save(userEntity);
+
         return {
-          userId: result.raw.insertId,
+          userId: result.id,
           provider: 'kakao',
           uid: loginData.uid,
         };
@@ -66,12 +70,13 @@ export class AuthService {
   }
 
   async localJoin(localJoinData: LocalJoinAuthDto) {
-    await this.userRepository.insert({
+    const user = this.userRepository.create({
       provider: 'local',
       user_name: localJoinData.nickname,
       email: localJoinData.email,
       password: await bcrypt.hash(localJoinData.password, 12),
     });
+    await this.userRepository.save(user);
   }
 
   async localLogin(localLoginData: LocalLoginAuthDto) {
@@ -100,7 +105,7 @@ export class AuthService {
     });
 
     this.RedisService.setRefreshToken(
-      `${user.id}`,
+      user.id.toString(),
       refeshToken,
       60 * 60 * 24 * 7,
     );
@@ -157,7 +162,7 @@ export class AuthService {
     }
   }
 
-  async validRefreshToken(refreshToken: string, userId: number) {
+  async validLocalRefreshToken(refreshToken: string, userId: number) {
     try {
       const token = await this.RedisService.getRefreshToken(userId);
 
@@ -174,6 +179,32 @@ export class AuthService {
     } catch (e) {
       throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
     }
+  }
+
+  async validKakaoRefreshToken(refreshToken: string) {
+    let newAccessToken: string;
+    try {
+      const response = await this.HttpService.axiosRef.post<{
+        access_token: string;
+        token_type: string;
+        refresh_token?: string;
+        expires_in: number;
+        refresh_token_expires_in?: number;
+      }>(
+        'https://kauth.kakao.com/oauth/token',
+        {
+          grant_type: 'refresh_token',
+          client_id: this.ConfigService.get<string>('KAKAO_CLIENT_KEY'),
+          refresh_token: refreshToken,
+        },
+        { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } },
+      );
+
+      newAccessToken = response.data.access_token;
+    } catch (e) {
+      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+    }
+    return newAccessToken;
   }
 
   async logout(refreshToken: string) {
