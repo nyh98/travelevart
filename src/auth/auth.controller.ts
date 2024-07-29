@@ -1,8 +1,17 @@
-import { Controller, Body, Post, HttpCode, Get, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Body,
+  Post,
+  HttpCode,
+  Headers,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { KakaoAuthDto } from './dto/kakao-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LocalJoinAuthDto, LocalLoginAuthDto } from './dto/local-auth.dto';
+import { RefreshTokenDto } from './dto/refresh-token-dto';
 
 @Controller('auth')
 export class AuthController {
@@ -25,21 +34,43 @@ export class AuthController {
     return this.authService.localLogin(loginData);
   }
 
-  @Post('/local/token')
-  async refreshToken(
-    @Headers('Authorization') refreshToken: string,
-    @Body('userId') userId: number,
-  ) {
-    const newAccessToken = await this.authService.validRefreshToken(
-      refreshToken,
-      userId,
-    );
+  @Post('/token')
+  async refreshToken(@Body() data: RefreshTokenDto) {
+    let newAccessToken: string;
+
+    //카카오 토큰 재발급 요청
+    const isValidKakaoRefreshToken =
+      await this.authService.validKakaoRefreshToken(data.refreshToken);
+    if (isValidKakaoRefreshToken) {
+      newAccessToken = isValidKakaoRefreshToken.newAccessToken;
+    }
+
+    //만약 카카오가 아니라고 하면 로컬 토큰 재발급
+    const isValidLocalRefreshToken =
+      await this.authService.validLocalRefreshToken(data.refreshToken);
+
+    if (isValidLocalRefreshToken) {
+      newAccessToken = isValidLocalRefreshToken.newAccessToken;
+    }
+
+    //카카오, 로컬 둘다 유효하지 않다면 401
+    if (!newAccessToken) {
+      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+    }
+
     return { accessToken: newAccessToken };
   }
 
   @Post('/local/logout')
-  async logout(@Headers('Authorization') refreshToken: string) {
+  async logout(@Headers('Authorization') credentialData: string) {
+    if (!credentialData) {
+      throw new BadRequestException('인증 정보가 없습니다');
+    }
+
+    const refreshToken = credentialData.split(' ')[1];
+
     await this.authService.logout(refreshToken);
+
     return { message: '로그아웃 완료' };
   }
 }
