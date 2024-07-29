@@ -19,11 +19,11 @@ export class Postlike {
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
-    @ManyToOne(() => User, user => user.postlikes)
+    @ManyToOne(() => User, user => user.postlike)
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @ManyToOne(() => Post, post => post.postlikes)
+    @ManyToOne(() => Post, post => post.postlike)
     @JoinColumn({ name: 'post_id' })
     post: Post;
 }
