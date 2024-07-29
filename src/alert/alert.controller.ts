@@ -1,34 +1,36 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, Req } from '@nestjs/common';
 import { AlertService } from './alert.service';
-import { CreateAlertDto } from './dto/create-alert.dto';
-import { UpdateAlertDto } from './dto/update-alert.dto';
+import { Request } from 'express';
 
 @Controller('alert')
 export class AlertController {
   constructor(private readonly alertService: AlertService) {}
 
-  @Post()
-  create(@Body() createAlertDto: CreateAlertDto) {
-    return this.alertService.create(createAlertDto);
-  }
-
   @Get()
-  findAll() {
-    return this.alertService.findAll();
+  async getAlert(
+    @Req() req: Request
+  ) {
+    try {
+      return await this.alertService.getAlert(req.user.id)
+    } catch (error) {
+      throw new HttpException(
+        error.message || '알림 GET 컨트롤러 에러',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.alertService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAlertDto: UpdateAlertDto) {
-    return this.alertService.update(+id, updateAlertDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.alertService.remove(+id);
+  @Patch()
+  async checkAlert(
+    @Req() req: Request
+  ) {
+    try {
+      return await this.alertService.checkAlert(req.user.id)
+    } catch (error) {
+      throw new HttpException(
+        error.message || '알림 PATCH 컨트롤러 에러',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

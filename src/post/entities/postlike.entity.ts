@@ -14,7 +14,7 @@ export class Postlike {
     post_id: number;
 
     @Column({ default: false })
-    check_read: boolean;
+    check: boolean;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;

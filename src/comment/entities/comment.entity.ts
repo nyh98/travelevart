@@ -21,7 +21,7 @@ export class Comment {
     created_at: Date;
 
     @Column({ default: false })
-    check_read: boolean;
+    check: boolean;
 
     @ManyToOne(() => User, user => user.comment)
     @JoinColumn({ name: 'user_id' })
