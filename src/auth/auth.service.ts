@@ -56,7 +56,7 @@ export class AuthService {
         e instanceof QueryFailedError &&
         e.driverError.code === 'ER_DUP_ENTRY'
       ) {
-        throw new ConflictException('중복된 이메일 또는 닉네임 입니다');
+        throw new ConflictException('중복된 이메일 입니다');
       }
 
       throw new InternalServerErrorException('서버에러 관리자에게 문의 바람');
@@ -76,7 +76,18 @@ export class AuthService {
       email: localJoinData.email,
       password: await bcrypt.hash(localJoinData.password, 12),
     });
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (e) {
+      if (
+        e instanceof QueryFailedError &&
+        e.driverError.code === 'ER_DUP_ENTRY'
+      ) {
+        throw new ConflictException('중복된 이메일 입니다');
+      }
+
+      throw new InternalServerErrorException('서버에러 관리자에게 문의 바람');
+    }
   }
 
   async localLogin(localLoginData: LocalLoginAuthDto) {
