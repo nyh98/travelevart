@@ -73,6 +73,8 @@ export class AuthService {
     const user = this.userRepository.create({
       provider: 'local',
       user_name: localJoinData.nickname,
+      profile_img:
+        'http://t1.kakaocdn.net/account_images/default_profile.jpeg.twg.thumb.R640x640',
       email: localJoinData.email,
       password: await bcrypt.hash(localJoinData.password, 12),
     });
@@ -109,7 +111,9 @@ export class AuthService {
     }
 
     const payload = { userId: user.id };
-    const accessToken = await this.JwtService.signAsync(payload);
+    const accessToken = await this.JwtService.signAsync(payload, {
+      expiresIn: '2h',
+    });
     const refeshToken = await this.JwtService.signAsync(payload, {
       expiresIn: '7d',
     });
