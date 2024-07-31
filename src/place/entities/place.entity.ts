@@ -9,7 +9,7 @@ export class Place {
   @Column()
   address: string;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 
   @Column()
