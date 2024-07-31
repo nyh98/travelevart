@@ -12,6 +12,7 @@ import { DiaryModule } from './diary/diary.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
+import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
 
 @Module({
@@ -43,6 +44,7 @@ import { S3Module } from './s3/s3.module';
     DiaryModule,
     MailModule,
     RedisModule,
+    ScheduleModule,
     S3Module,
   ],
   controllers: [],

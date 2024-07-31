@@ -8,11 +8,13 @@ import { User } from 'src/user/entities/user.entity';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
 import { Comment } from 'src/comment/entities/comment.entity'
+import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment]), AuthModule, RedisModule],
   controllers: [PostController],
   providers: [PostService],
+  exports: [PostService],
 })
 export class PostModule {
   configure(consumer: MiddlewareConsumer) {

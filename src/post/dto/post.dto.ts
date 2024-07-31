@@ -12,12 +12,10 @@ export class GetPostsDto {
     searchName?: string;
 
     @IsNumber()
-    @Min(1)
     @Transform(({ value }) => Number(value))
     page: number;
 
     @IsNumber()
-    @Min(1)
     @Transform(({ value }) => Number(value))
     pageSize: number;
 }
@@ -34,7 +32,6 @@ export class PostPostsDto {
 
     @IsNumber()
     @IsOptional()
-    @Min(1)
     travelRoute_id?: number;
 
     @ValidateIf((o) => o.post_id !== undefined)
@@ -53,5 +50,13 @@ export interface PostDetailDto {
     created_at: Date;
     travelRoute_id: number;
     like: number;
+    contents?: string;
+}
+
+// 게시글 조회 Res
+export interface PopularPostDetailDto {
+    id: number;
+    author: string;
+    title: string;
     contents?: string;
 }

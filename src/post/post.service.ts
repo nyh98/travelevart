@@ -2,16 +2,18 @@ import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { DataSource, Repository } from 'typeorm';
-import { GetPostsDto, PostDetailDto, PostPostsDto } from './dto/post.dto';
+import { GetPostsDto, PopularPostDetailDto, PostDetailDto, PostPostsDto } from './dto/post.dto';
 import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
+import { RedisService } from 'src/redis/redis.service';
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
+    private readonly redisService: RedisService,
     private readonly dataSource: DataSource,
     @InjectRepository(Postlike)
     private readonly likeRepository: Repository<Postlike>,
@@ -21,38 +23,37 @@ export class PostService {
     private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
+  // 일반 게시물 조회
+  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; popularPosts: PopularPostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;
     if (!page) page = 1;
     if (!pageSize) pageSize = 10;
+    if (!target) {
+      target = '여행글';
+    }
 
     const qb = this.postRepository.createQueryBuilder('post')
-      .leftJoinAndSelect('post.user', 'user')
+      .leftJoin('post.user', 'user')
       .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
       .leftJoin('post.postlike', 'postlike') // 좋아요 수를 계산하기 위한 조인
+      .addSelect('user.user_name') // 필요한 유저 정보만 선택
+      .addSelect('user.profile_img')
       .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
       .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
-      .addGroupBy('user.id'); // 작성자별로 그룹화
-
-    if (!target) {
-      target = '전체 게시글';
-    }
-    if (searchName) {
-      target = '전체 게시글';
-    }
 
     try {
-      if (target === '전체 게시글') {
+      if (target === '여행글') {
+        qb.andWhere('post.travelRoute_id IS NOT NULL');
         if (searchName && searchName.trim() !== '') {
           qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
         }
-        qb.orderBy('post.created_at', 'DESC');
-      } else if (target === '인기 여행글') {
-        qb.andWhere('post.custom_id IS NOT NULL');
-        qb.orderBy('post.custom_id', 'DESC'); // 인기 여행글에 대한 정렬 기준
-      } else if (target === '인기 똥글') {
-        qb.andWhere('post.custom_id IS NULL');
+        qb.orderBy('post.created_at', 'DESC'); // 인기 여행글에 대한 정렬 기준
+      } else if (target === '똥글') {
+        qb.andWhere('post.travelRoute_id IS NULL');
+        if (searchName && searchName.trim() !== '') {
+          qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
+        }
         qb.orderBy('post.created_at', 'DESC'); // 인기 똥글에 대한 정렬 기준
       }
 
@@ -71,25 +72,100 @@ export class PostService {
       const postDetail = rawPosts.map((rawPost, index) => ({
         id: posts[index].id,
         author: posts[index].user.user_name,
+        profileImg: posts[index].user.profile_img,
         title: posts[index].title,
         views: posts[index].view_count,
         commentCount: parseInt(rawPost.commentCount, 10) || 0, // 조인 결과 사용
         created_at: posts[index].created_at,
         travelRoute_id: posts[index].travelRoute_id, // 커스텀 여행 DB에서 받아서 추가해야됨
         like: parseInt(rawPost.likeCount, 10) || 0, // 조인 결과 사용
+        contenst: posts[index].contents
       }));
+
+      const popularPosts = await this.getPopularPosts(target);
 
       // 응답 데이터 구조화
       return {
         posts: postDetail,
+        popularPosts: popularPosts,
         currentPage: Number(page),
         totalPage: totalPage,
       };
     } catch (error) {
-      console.error('Error in markAlertsAsRead:', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`GET /posts (일반 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     };
   };
+
+  // 인기 게시물 조회
+  private async getPopularPosts(target: string) {
+    try {
+      let cachedPopularPosts = null;
+
+      if (target === '여행글') {
+        cachedPopularPosts = await this.redisService.getPopularTravelPostsCache();
+      } else if (target === '똥글') {
+        cachedPopularPosts = await this.redisService.getPopularNormalPostsCache();
+      }
+
+      if (cachedPopularPosts) {
+        return JSON.parse(cachedPopularPosts);
+      }
+
+      // 인기 게시물 계산 로직 (가중치 적용)
+      const popularPosts = await this.calculatePopularPosts(target);
+
+      // 캐시 저장 (TTL 1일로 설정)
+      if (target === '여행글') {
+        await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
+      } else if (target === '똥글') {
+        await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
+      }
+
+      return popularPosts;
+    } catch (error) {
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`GET /posts (인기 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // 인기 게시물 계산
+  private async calculatePopularPosts(target: string): Promise<PopularPostDetailDto[]> {
+    let query = this.postRepository.createQueryBuilder('post')
+      .leftJoin('post.postlike', 'postlike')
+      .leftJoin('post.user', 'user')
+      .addSelect('user.user_name')
+      .addSelect('user.profile_img')
+      .addSelect('COUNT(postlike.id) * 2 + post.view_count AS score')
+      .groupBy('post.id')
+      .orderBy('score', 'DESC')
+      .limit(10);
+
+    if (target === '여행글') {
+      query = query.andWhere('post.travelRoute_id IS NOT NULL');
+    } else if (target === '똥글') {
+      query = query.andWhere('post.travelRoute_id IS NULL');
+    }
+
+    const rawPosts = await query.getRawAndEntities();
+    return rawPosts.entities.map((post, index) => ({
+      id: post.id,
+      author: post.user.user_name,
+      profileImg: post.user.profile_img,
+      title: post.title,
+      contents: post.contents,
+    }));
+  }
+
+  // 인기 게시물 업데이트
+  async updatePopularPosts() {
+    const popularTravelPosts = await this.calculatePopularPosts('여행글');
+    await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularTravelPosts), 60 * 60 * 24);
+
+    const popularNormalPosts = await this.calculatePopularPosts('똥글');
+    await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularNormalPosts), 60 * 60 * 24);
+  }
+
 
   async getDetailPost(id: number): Promise<PostDetailDto> {
     try {
@@ -115,7 +191,7 @@ export class PostService {
         id: post.post_id,
         author: post.user_user_name,
         title: post.post_title,
-        views: post.post_view_count + 1, // 이미 증가된 조회수를 반영
+        views: post.post_view_count, // 이미 증가된 조회수를 반영
         commentCount: parseInt(post.commentCount, 10) || 0,
         created_at: post.post_created_at,
         travelRoute_id: post.post_travelRoute_id || 0,
