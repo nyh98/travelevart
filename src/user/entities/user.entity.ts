@@ -3,6 +3,7 @@ import { Post } from '../../post/entities/post.entity'
 import { Postlike } from '../../post/entities/postlike.entity'
 import { Comment } from '../../comment/entities/comment.entity'
 import { Diary } from 'src/diary/entities/diary.entity';
+import { Cart } from 'src/cart/entities/cart.entity';
 
 @Entity('user')
 export class User {
@@ -41,4 +42,7 @@ export class User {
 
     @OneToMany(() => Diary, diary => diary.user)
     diaries: Diary[];
+
+    @OneToMany(() => Cart, cart => cart.user)
+    carts: Cart[];
 }
