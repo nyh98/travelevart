@@ -4,9 +4,10 @@ import { PlaceController } from './place.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
 import { HttpModule } from '@nestjs/axios';
+import { Region } from './entities/region.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Place]), HttpModule],
+  imports: [TypeOrmModule.forFeature([Place, Region]), HttpModule],
   controllers: [PlaceController],
   providers: [PlaceService],
 })

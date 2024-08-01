@@ -1,5 +1,13 @@
 import { Cart } from 'src/cart/entities/cart.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Region } from './region.entity';
 
 @Entity()
 export class Place {
@@ -27,9 +35,13 @@ export class Place {
   @Column('text', { nullable: true })
   descreiption: string;
 
-  @Column()
-  region: string;
-
-  @OneToMany(() => Cart, cart => cart.place)
+  @OneToMany(() => Cart, (cart) => cart.place)
   carts: Cart[];
+
+  @ManyToOne(() => Region, (region) => region.places)
+  @JoinColumn({ name: 'regionId' })
+  region: Region;
+
+  @Column()
+  regionId: number;
 }
