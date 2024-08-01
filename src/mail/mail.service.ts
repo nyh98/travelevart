@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, Transporter } from 'nodemailer'
 import { CreateMailDto } from './dto/create-mail.dto';
@@ -21,13 +21,18 @@ export class MailService {
   }
 
   async sendMail(text: string) {
-    const mailOptions = {
-      from: this.configService.get<string>('EMAIL_USER'),
-      to: this.configService.get<string>('EMAIL_RECEIVER'),
-      subject: "테스트입니다 ㅎㅎ",
-      text,
-    };
+    try {
+      const mailOptions = {
+        from: this.configService.get<string>('EMAIL_USER'),
+        to: this.configService.get<string>('EMAIL_RECEIVER'),
+        subject: "무니 메일",
+        text,
+      };
 
-    return this.transporter.sendMail(mailOptions);
+      return this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`GET /posts (일반 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    };
   }
 }

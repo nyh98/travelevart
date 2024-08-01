@@ -12,7 +12,7 @@ export class Diary {
   user_id: number;
 
   @Column()
-  customtravel_id: number;
+  travelroute_id: number;
 
   @Column()
   detailtravel_id: number;

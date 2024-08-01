@@ -1,5 +1,4 @@
-import { Transform } from "class-transformer";
-import { IsMongoId, IsNotEmpty, IsNumber, IsOptional, IsString, Min, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, ValidateIf } from "class-validator";
 
 // 게시글 조회 Req
 export class GetPostsDto {
@@ -11,13 +10,13 @@ export class GetPostsDto {
     @IsOptional()
     searchName?: string;
 
-    @IsNumber()
-    @Transform(({ value }) => Number(value))
-    page: number;
+    @IsNumberString()
+    @IsOptional()
+    page?: string;
 
-    @IsNumber()
-    @Transform(({ value }) => Number(value))
-    pageSize: number;
+    @IsNumberString()
+    @IsOptional()
+    pageSize?: string
 }
 
 // 게시글 작성 및 수정
@@ -44,6 +43,7 @@ export class PostPostsDto {
 export interface PostDetailDto {
     id: number;
     author: string;
+    profileImg: string;
     title: string;
     views: number;
     commentCount: number;
@@ -57,6 +57,7 @@ export interface PostDetailDto {
 export interface PopularPostDetailDto {
     id: number;
     author: string;
+    profileImg: string
     title: string;
     contents?: string;
 }
