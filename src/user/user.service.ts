@@ -29,7 +29,7 @@ export class UserService {
       profileImg: user.profile_img,
     }));
 
-    const currentPage = Number(page);
+    const currentPage = page;
     const totalPage = Math.ceil(total / limit);
     return { users, currentPage, totalPage };
   }

@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Region } from './region.entity';
+import { PlaceRating } from './placeRating.entity';
 
 @Entity()
 export class Place {
@@ -44,4 +45,7 @@ export class Place {
 
   @Column()
   regionId: number;
+
+  @OneToMany(() => PlaceRating, (placeRating) => placeRating.place)
+  rating: PlaceRating[];
 }
