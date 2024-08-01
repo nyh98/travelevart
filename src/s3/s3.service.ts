@@ -1,4 +1,6 @@
 import {
+  DeleteObjectCommand,
+  DeleteObjectsCommand,
   ObjectCannedACL,
   PutObjectCommand,
   S3Client,
@@ -9,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 @Injectable()
 export class S3Service {
   private s3: S3Client;
+  private Buket = this.ConfigService.get<string>('AWS_S3_BUCKET_NAME');
 
   constructor(private ConfigService: ConfigService) {
     this.s3 = new S3Client({
@@ -26,7 +29,7 @@ export class S3Service {
     const params = {
       Key: key,
       Body: file.buffer,
-      Bucket: this.ConfigService.get('AWS_S3_BUCKET_NAME'),
+      Bucket: this.Buket,
       ACL: ObjectCannedACL.public_read,
     };
 
@@ -40,5 +43,18 @@ export class S3Service {
 
     const imgUrl = `https://${params.Bucket}.s3.${this.ConfigService.get<string>('AWS_REGION')}.amazonaws.com/${key}`;
     return imgUrl;
+  }
+
+  async deleteFile(imgUrl: string) {
+    const key = imgUrl.split('travelevart')[1];
+
+    if (key) {
+      const command = new DeleteObjectCommand({
+        Bucket: this.Buket,
+        Key: `travelevart${key}`,
+      });
+
+      await this.s3.send(command);
+    }
   }
 }

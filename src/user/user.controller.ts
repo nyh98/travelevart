@@ -51,6 +51,7 @@ export class UserController {
     let userName: string;
     if (file) {
       imgUrl = await this.S3Service.uploadSingleFile(file);
+      await this.S3Service.deleteFile(req.user.profile_img);
     }
 
     if (replaceData.userName) {
