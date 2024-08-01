@@ -2,6 +2,7 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGenerat
 import { User } from '../../user/entities/user.entity';
 import { Postlike } from './postlike.entity'
 import { Comment } from '../../comment/entities/comment.entity'
+import { Fork } from "src/fork/entities/fork.entity";
 
 @Entity('post')
 @Index('idx_post_created_at', ['created_at'])
@@ -36,4 +37,7 @@ export class Post {
 
     @OneToMany(() => Comment, comment => comment.post)
     comment: Comment[];
+
+    @OneToMany(() => Fork, fork => fork.post)
+    forks: Fork[];
 }

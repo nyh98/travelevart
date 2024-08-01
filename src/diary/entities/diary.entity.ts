@@ -1,7 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { DetailTravel } from 'src/custom/entities/detailtravel.entity';
-import { CustomTravel } from 'src/custom/entities/customtravel.entity';
+import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 
 @Entity('diary')
 export class Diary {
@@ -25,9 +25,9 @@ export class Diary {
   @JoinColumn({ name: 'detailtravel_id'})
   detailTravel: DetailTravel;
 
-  @ManyToOne(() => CustomTravel, customTravel => customTravel.diaries)
-  @JoinColumn({ name: 'customtravel_id'})
-  customTravel: CustomTravel;
+  @ManyToOne(() => TravelRoute, travelRoute => travelRoute.diaries)
+  @JoinColumn({ name: 'travelroute_id'})
+  travelRoute: TravelRoute;
 
   @Column('text')
   contents: string;

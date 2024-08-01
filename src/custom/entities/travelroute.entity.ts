@@ -1,8 +1,8 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
 
-@Entity('customtravel')
-export class CustomTravel {
+@Entity('travelroute')
+export class TravelRoute {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -16,11 +16,11 @@ export class CustomTravel {
     type: 'tinyint',
     default: 0,
   })
-  custom_range: number;
+  travelroute_range: number;
 
   @Column()
   name: string;
 
-  @OneToMany(() => Diary, diary => diary.customTravel)
+  @OneToMany(() => Diary, diary => diary.travelRoute)
   diaries: Diary[];
 }

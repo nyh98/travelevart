@@ -14,6 +14,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
+import { ForkModule } from './fork/fork.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { S3Module } from './s3/s3.module';
     RedisModule,
     ScheduleModule,
     S3Module,
+    ForkModule,
   ],
   controllers: [],
   providers: [],

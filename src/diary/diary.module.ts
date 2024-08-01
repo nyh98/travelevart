@@ -9,12 +9,12 @@ import { authMiddleware } from '../auth/auth.middleware';
 import { AuthModule } from '../auth/auth.module';
 import { User } from 'src/user/entities/user.entity';
 import { DetailTravel } from 'src/custom/entities/detailtravel.entity';
-import { CustomTravel } from 'src/custom/entities/customtravel.entity';
+import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Diary, User, DetailTravel, CustomTravel]),
+    TypeOrmModule.forFeature([Diary, User, DetailTravel, TravelRoute]),
     AuthModule,
   ],
   controllers: [DiaryController],
