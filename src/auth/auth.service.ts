@@ -128,7 +128,7 @@ export class AuthService {
         userId: user.id,
         email: user.email,
         name: user.user_name,
-        profileImg: user.profile_img || '프로필',
+        profileImg: user.profile_img,
       },
       provider: user.provider,
       accessToken: accessToken,

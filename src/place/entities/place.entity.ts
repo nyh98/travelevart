@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Cart } from 'src/cart/entities/cart.entity';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 
 @Entity()
 export class Place {
@@ -28,4 +29,7 @@ export class Place {
 
   @Column()
   region: string;
+
+  @OneToMany(() => Cart, cart => cart.place)
+  carts: Cart[];
 }

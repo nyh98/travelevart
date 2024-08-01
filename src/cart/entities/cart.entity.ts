@@ -1,15 +1,23 @@
-import { Place } from 'src/place/entities/place.entity';
 import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Place } from 'src/place/entities/place.entity';
+import { User } from 'src/user/entities/user.entity';
 
-@Entity()
+@Entity('cart')
 export class Cart {
   @PrimaryGeneratedColumn()
-  cart_id: string;
+  cart_id: number;
+
+  @ManyToOne(() => Place, place => place.carts, { eager: true })
+  @JoinColumn({ name: 'placeId' })
+  place: Place;
 
   @Column()
-  user_id: string;
+  placeId: number;
 
-  @ManyToOne(() => Place)
-  @JoinColumn({ name: 'place_id' })
-  place: Place;
+  @ManyToOne(() => User, user => user.carts)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
+  @Column()
+  userId: number;
 }
