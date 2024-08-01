@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
 import { HttpModule } from '@nestjs/axios';
 import { Region } from './entities/region.entity';
+import { PlaceRating } from './entities/placeRating.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Place, Region]), HttpModule],
+  imports: [TypeOrmModule.forFeature([Place, Region, PlaceRating]), HttpModule],
   controllers: [PlaceController],
   providers: [PlaceService],
 })

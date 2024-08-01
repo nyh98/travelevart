@@ -1,9 +1,16 @@
-import { IsNotEmpty, IsInt, IsOptional, IsString, IsDate, IsIn } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsDate,
+  IsIn,
+} from 'class-validator';
 
 export class CreateDiaryDto {
   @IsNotEmpty()
   @IsInt()
-  customtravel_id: number;
+  travelroute_id: number;
 
   @IsNotEmpty()
   @IsInt()
