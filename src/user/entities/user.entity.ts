@@ -11,7 +11,7 @@ export class User {
   id: number;
 
   @Column()
-  profile_img: string | null;
+  profile_img: string;
 
   @Column('varchar', { length: 100 })
   provider: string;
