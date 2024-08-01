@@ -10,7 +10,7 @@ export class ScheduleService {
     private readonly postService: PostService,
   ) {}
 
-  @Cron('5 3 * * *', {
+  @Cron('0 0 * * *', {
     timeZone: 'Asia/Seoul',
   })
   async handleCron() {
