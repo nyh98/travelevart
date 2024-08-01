@@ -7,6 +7,7 @@ import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { RedisService } from 'src/redis/redis.service';
+import { type } from 'os';
 
 @Injectable()
 export class PostService {
@@ -24,7 +25,7 @@ export class PostService {
   ) {}
 
   // 일반 게시물 조회
-  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; popularPosts: PopularPostDetailDto[]; currentPage: number, totalPage: number }> {
+  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;
     if (!page) page = 1;
     if (!pageSize) pageSize = 10;
@@ -82,12 +83,9 @@ export class PostService {
         contenst: posts[index].contents
       }));
 
-      const popularPosts = await this.getPopularPosts(target);
-
       // 응답 데이터 구조화
       return {
         posts: postDetail,
-        popularPosts: popularPosts,
         currentPage: Number(page),
         totalPage: totalPage,
       };
@@ -98,8 +96,12 @@ export class PostService {
   };
 
   // 인기 게시물 조회
-  private async getPopularPosts(target: string) {
+  async getPopularPosts(target: string): Promise<{ popularPosts: PopularPostDetailDto[]; }> {
     try {
+      if (!target) {
+        target = '여행글';
+      }
+
       let cachedPopularPosts = null;
 
       if (target === '여행글') {
@@ -122,7 +124,9 @@ export class PostService {
         await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
       }
 
-      return popularPosts;
+      return {
+        popularPosts: popularPosts
+      }
     } catch (error) {
       console.error('Error :', error); // 에러 로그 추가
       throw new HttpException(`GET /posts (인기 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);

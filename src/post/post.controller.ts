@@ -34,6 +34,19 @@ export class PostController {
     }
   }
 
+  // 인기 게시글 조회
+  @Get('/popular')
+  async getPopularPosts(@Query('target') target:string ) {
+    try {
+      return await this.postService.getPopularPosts(target);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // 게시글 상세 조회
   @Get(':id')
   async getDetailPost(@Param('id', ParseIntPipe) id: number) {
