@@ -5,7 +5,7 @@ export class SearchPlaceDto {
   @Type(() => Number)
   @IsNumber({}, { message: 'region은 숫자여야 합니다' })
   @IsOptional()
-  region: number;
+  regionCode: number;
 
   district: string;
 

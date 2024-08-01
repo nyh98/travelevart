@@ -23,8 +23,8 @@ export class PlaceService {
       address?: FindOperator<string>;
     } = {};
 
-    if (searchOption.region) {
-      where.regionId = searchOption.region;
+    if (searchOption.regionCode) {
+      where.regionId = searchOption.regionCode;
     }
 
     if (searchOption.district) {
