@@ -8,13 +8,13 @@ import { Request } from 'express';
 export class DiaryController {
   constructor(private readonly diaryService: DiaryService) {}
 
-  @Get(':customtravelId')
+  @Get(':travelrouteId')
   async getDiaries(
-    @Param('customtravelId', ParseIntPipe) customtravel_id: number,
+    @Param('travelrouteId', ParseIntPipe) travelroute_id: number,
     @Req() req: Request
   ) {
     try {
-      return await this.diaryService.getdiaries(customtravel_id, req.user.id);
+      return await this.diaryService.getdiaries(travelroute_id, req.user.id);
     } catch (error) {
       throw new HttpException(
         error.message || '서버 에러',
@@ -37,14 +37,14 @@ export class DiaryController {
 
   @Patch()
   async modifydiary(
-    @Query('customtravelId') customtravel_id: number,
+    @Query('travelrouteId') travelroute_id: number,
     @Query('detailtravelId') detailtravel_id: number,
     @Body() updateDiaryDto: UpdateDiaryDto,
     @Req() req: Request
   ) {
     try {
       return await this.diaryService.modifydiary(
-        customtravel_id,
+        travelroute_id,
         detailtravel_id,
         updateDiaryDto,
         req.user.id
@@ -59,14 +59,14 @@ export class DiaryController {
 
   @Delete()
   async deletediary(
-    @Query('customtravelId') customtravel_id: number,
+    @Query('travelrouteId') travelroute_id: number,
     @Query('detailtravelId') detailtravel_id: number,
     @Body() updateDiaryDto: UpdateDiaryDto,
     @Req() req: Request
   ) {
     try {
       return await this.diaryService.deletediary(
-        customtravel_id,
+        travelroute_id,
         detailtravel_id,
         req.user.id
       );

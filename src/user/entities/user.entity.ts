@@ -4,6 +4,7 @@ import { Postlike } from '../../post/entities/postlike.entity';
 import { Comment } from '../../comment/entities/comment.entity';
 import { Diary } from 'src/diary/entities/diary.entity';
 import { Cart } from 'src/cart/entities/cart.entity';
+import { Fork } from 'src/fork/entities/fork.entity';
 
 @Entity('user')
 export class User {
@@ -45,4 +46,7 @@ export class User {
 
   @OneToMany(() => Cart, (cart) => cart.user)
   carts: Cart[];
+
+  @OneToMany(() => Fork , fork => fork.user)
+  forks: Fork[];
 }

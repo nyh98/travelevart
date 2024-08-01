@@ -14,15 +14,15 @@ export class DiaryService {
     private diaryRepository: Repository<Diary>,
   ) {}
 
-  async getdiaries(customtravel_id: number, userId: number) {
+  async getdiaries(travelroute_id: number, userId: number) {
     try{
       const diaries = await this.diaryRepository.find({
-        where: { customTravel: { id: customtravel_id }, user: { id: userId } },
+        where: { travelRoute: { id: travelroute_id }, user: { id: userId } },
         relations: ['detailTravel'],
       });
   
       return {
-        customtravel_id,
+        travelroute_id,
         details: diaries.map(diary => ({
           diary_id: diary.id,
           detailtravel_id: diary.detailTravel.id,
@@ -50,7 +50,7 @@ export class DiaryService {
   }
 
   async modifydiary(
-    customtravel_id: number,
+    travelroute_id: number,
     detailtravel_id: number,
     updateDiaryDto: UpdateDiaryDto,
     userId: number
@@ -58,7 +58,7 @@ export class DiaryService {
     try {
     const diary = await this.diaryRepository.findOne({
       where: {
-        customTravel: { id: customtravel_id },
+        travelRoute: { id: travelroute_id },
         detailTravel: { id: detailtravel_id },
         user: { id: userId }
       }
@@ -73,14 +73,14 @@ export class DiaryService {
 }
 
   async deletediary(
-    customtravel_id: number,
+    travelroute_id: number,
     detailtravel_id: number,
     userId: number
   ){
     try {
     const diary = await this.diaryRepository.findOne({
       where: {
-        customTravel: { id: customtravel_id },
+        travelRoute: { id: travelroute_id },
         detailTravel: { id: detailtravel_id },
         user: { id: userId }
       }
