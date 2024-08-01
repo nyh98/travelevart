@@ -6,10 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { MailService } from './mail.service';
-import { CreateMailDto } from './dto/create-mail.dto';
-import { UpdateMailDto } from './dto/update-mail.dto';
 
 @Controller('mail')
 export class MailController {
@@ -17,9 +17,16 @@ export class MailController {
 
   @Post()
   async sendEmail(@Body('text') text: string) {
-    await this.mailService.sendMail(text);
-    return {
-      message: 'Email sent successfully',
-    };
+    try {
+      await this.mailService.sendMail(text);
+      return {
+        message: '성공적으로 문의를 넣었습니다.',
+      };
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Internal server error',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

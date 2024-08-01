@@ -3,7 +3,7 @@ import { IsOptional, IsInt, IsString, IsIn, ValidateIf, IsNumber } from 'class-v
 export class UpdateDiaryDto {
   @IsOptional()
   @IsInt()
-  customtravel_id?: number;
+  travelroute_id?: number;
 
   @IsOptional()
   @IsInt()

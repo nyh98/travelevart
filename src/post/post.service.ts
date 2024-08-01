@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, IsNull, Like, Not, Repository } from 'typeorm';
 import { GetPostsDto, PopularPostDetailDto, PostDetailDto, PostPostsDto } from './dto/post.dto';
 import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
@@ -27,12 +27,29 @@ export class PostService {
   // 일반 게시물 조회
   async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;
-    if (!page) page = 1;
-    if (!pageSize) pageSize = 10;
+
+    const pageNumber = page ? parseInt(page, 10) : 1;
+    const pageSizeNumber = page ? parseInt(pageSize, 10) : 10;
+
     if (!target) {
-      target = '여행글';
+      target = '여행게시판';
     }
 
+    // 조건 설정
+    const whereCondition: any = {};
+    if (target === '여행게시판') {
+      whereCondition.travelRoute_id = Not(IsNull());
+    } else if (target === '자유게시판') {
+      whereCondition.travelRoute_id = IsNull();
+    }
+
+    if (searchName && searchName.trim() !== '') {
+      whereCondition.title = Like(`%${searchName}%`);
+    }
+
+    // 전체 게시물 개수 가져오기
+    const totalPosts = await this.postRepository.count({ where: whereCondition });
+    
     const qb = this.postRepository.createQueryBuilder('post')
       .leftJoin('post.user', 'user')
       .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
@@ -44,30 +61,32 @@ export class PostService {
       .groupBy('post.id') // 게시물별로 그룹화
 
     try {
-      if (target === '여행글') {
+      if (target === '여행게시판') {
         qb.andWhere('post.travelRoute_id IS NOT NULL');
         if (searchName && searchName.trim() !== '') {
           qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
         }
-        qb.orderBy('post.created_at', 'DESC'); // 인기 여행글에 대한 정렬 기준
-      } else if (target === '똥글') {
+        qb.orderBy('post.created_at', 'DESC'); // 인기 여행게시판에 대한 정렬 기준
+      } else if (target === '자유게시판') {
         qb.andWhere('post.travelRoute_id IS NULL');
         if (searchName && searchName.trim() !== '') {
           qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
         }
-        qb.orderBy('post.created_at', 'DESC'); // 인기 똥글에 대한 정렬 기준
+        qb.orderBy('post.created_at', 'DESC'); // 인기 자유게시판에 대한 정렬 기준
       }
 
       // 페이지네이션
-      qb.skip((page - 1) * pageSize).take(pageSize);
+      qb.skip((pageNumber - 1) * pageSizeNumber).take(pageSizeNumber);
 
       // 쿼리 실행 및 결과 가져오기
       const result = await qb.getRawAndEntities();
       const rawPosts = result.raw;
       const posts = result.entities;
 
-      // 전체 페이지 수 계산
-      const totalPage = Math.ceil(posts.length / pageSize);
+      let totalPage = Math.ceil(totalPosts / pageSizeNumber);
+      if (totalPage === 0) {
+        totalPage = 1;
+      }
 
       // 게시물 상세 정보 구성
       const postDetail = rawPosts.map((rawPost, index) => ({
@@ -80,13 +99,13 @@ export class PostService {
         created_at: posts[index].created_at,
         travelRoute_id: posts[index].travelRoute_id, // 커스텀 여행 DB에서 받아서 추가해야됨
         like: parseInt(rawPost.likeCount, 10) || 0, // 조인 결과 사용
-        contenst: posts[index].contents
+        contents: posts[index].contents
       }));
 
       // 응답 데이터 구조화
       return {
         posts: postDetail,
-        currentPage: Number(page),
+        currentPage: pageNumber,
         totalPage: totalPage,
       };
     } catch (error) {
@@ -99,14 +118,14 @@ export class PostService {
   async getPopularPosts(target: string): Promise<{ popularPosts: PopularPostDetailDto[]; }> {
     try {
       if (!target) {
-        target = '여행글';
+        target = '여행게시판';
       }
 
       let cachedPopularPosts = null;
 
-      if (target === '여행글') {
+      if (target === '여행게시판') {
         cachedPopularPosts = await this.redisService.getPopularTravelPostsCache();
-      } else if (target === '똥글') {
+      } else if (target === '자유게시판') {
         cachedPopularPosts = await this.redisService.getPopularNormalPostsCache();
       }
 
@@ -118,9 +137,9 @@ export class PostService {
       const popularPosts = await this.calculatePopularPosts(target);
 
       // 캐시 저장 (TTL 1일로 설정)
-      if (target === '여행글') {
+      if (target === '여행게시판') {
         await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
-      } else if (target === '똥글') {
+      } else if (target === '자유게시판') {
         await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
       }
 
@@ -143,11 +162,11 @@ export class PostService {
       .addSelect('COUNT(postlike.id) * 2 + post.view_count AS score')
       .groupBy('post.id')
       .orderBy('score', 'DESC')
-      .limit(10);
+      .limit(5);
 
-    if (target === '여행글') {
+    if (target === '여행게시판') {
       query = query.andWhere('post.travelRoute_id IS NOT NULL');
-    } else if (target === '똥글') {
+    } else if (target === '자유게시판') {
       query = query.andWhere('post.travelRoute_id IS NULL');
     }
 
@@ -163,28 +182,29 @@ export class PostService {
 
   // 인기 게시물 업데이트
   async updatePopularPosts() {
-    const popularTravelPosts = await this.calculatePopularPosts('여행글');
+    const popularTravelPosts = await this.calculatePopularPosts('여행게시판');
     await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularTravelPosts), 60 * 60 * 24);
 
-    const popularNormalPosts = await this.calculatePopularPosts('똥글');
+    const popularNormalPosts = await this.calculatePopularPosts('자유게시판');
     await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularNormalPosts), 60 * 60 * 24);
   }
 
-
+  // 게시물 상세 조회
   async getDetailPost(id: number): Promise<PostDetailDto> {
     try {
       // 조회수를 1 증가시키는 쿼리 실행
       await this.postRepository.increment({ id }, 'view_count', 1);
 
       const post = await this.postRepository.createQueryBuilder('post')
-        .leftJoinAndSelect('post.user', 'user')
+        .leftJoin('post.user', 'user')
         .leftJoin('post.comment', 'comment')
         .leftJoin('post.postlike', 'postlike')
         .where('post.id = :id', { id })
-        .addSelect('COUNT(comment.id) AS commentCount')
-        .addSelect('COUNT(postlike.id) AS likeCount')
+        .addSelect('user.user_name')
+        .addSelect('user.profile_img')
+        .addSelect('COUNT(DISTINCT comment.id) AS commentCount')
+        .addSelect('COUNT(DISTINCT postlike.id) AS likeCount')
         .groupBy('post.id')
-        .addGroupBy('user.id')
         .getRawOne();
 
       if (!post) {
@@ -194,6 +214,7 @@ export class PostService {
       return {
         id: post.post_id,
         author: post.user_user_name,
+        profileImg: post.user_profile_img,
         title: post.post_title,
         views: post.post_view_count, // 이미 증가된 조회수를 반영
         commentCount: parseInt(post.commentCount, 10) || 0,
