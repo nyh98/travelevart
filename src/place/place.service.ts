@@ -11,6 +11,7 @@ import { HttpService } from '@nestjs/axios';
 import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
 import { SearchPlaceDto } from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
+import { GptService } from 'src/gpt/gpt.service';
 
 @Injectable()
 export class PlaceService {
@@ -19,6 +20,7 @@ export class PlaceService {
     private HttpService: HttpService,
     @InjectRepository(PlaceRating)
     private ratingRepository: Repository<PlaceRating>,
+    private GptService: GptService,
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
@@ -120,9 +122,26 @@ export class PlaceService {
     await this.ratingRepository.delete(rating);
   }
 
+  async GPT_TEST() {
+    const re = await this.placeRepository
+      .createQueryBuilder('place')
+      .select([
+        'place.title, place.address, place.mapx, place.mapy, place.image',
+      ])
+      .where('place.regionId = :id1', { id1: 1 })
+      .orWhere('place.regionId = :id2', { id2: 2 })
+      .orWhere('place.regionId = :id3', { id3: 3 })
+      .orderBy('RAND()')
+      .limit(10)
+      .getRawMany();
+
+    return this.GptService.test(re);
+    // return re;
+  }
+
   async dbSave() {
     // const result = await this.HttpService.axiosRef.get<TourAPI>(
-    //   'https://apis.data.go.kr/B551011/KorService1/areaBasedList1?numOfRows=9999&pageNo=1&MobileOS=ETC&MobileApp=AppTest&ServiceKey=9r%2FsEsRkteEXizn9Ler4fllgsAYjEITh020%2FKtfOUheaArWMxp0Ad3jLDiPB8QV9v6ovtQqdD3oxLfj9PQR5fA%3D%3D&listYN=Y&arrange=C&contentTypeId=12&areaCode=37&sigunguCode=&cat1=&cat2=&cat3=&_type=json',
+    //   'https://apis.data.go.kr/B551011/KorService1/areaBasedList1?numOfRows=9999&pageNo=1&MobileOS=ETC&MobileApp=AppTest&ServiceKey=9r%2FsEsRkteEXizn9Ler4fllgsAYjEITh020%2FKtfOUheaArWMxp0Ad3jLDiPB8QV9v6ovtQqdD3oxLfj9PQR5fA%3D%3D&listYN=Y&arrange=C&contentTypeId=12&areaCode=31&sigunguCode=&cat1=&cat2=&cat3=&_type=json',
     // );
 
     // result.data.response.body.items.item.forEach(async (place) => {
@@ -151,7 +170,7 @@ export class PlaceService {
     //           mapx: Number(place.mapx),
     //           mapy: Number(place.mapy),
     //           descreiption: detail.data.response.body.items.item[0].overview,
-    //           regionId: 12,
+    //           regionId: 17,
     //         });
     //       }
     //     })

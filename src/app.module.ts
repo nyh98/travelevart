@@ -15,6 +15,7 @@ import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
 import { ForkModule } from './fork/fork.module';
+import { GptModule } from './gpt/gpt.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ForkModule } from './fork/fork.module';
     ScheduleModule,
     S3Module,
     ForkModule,
+    GptModule,
   ],
   controllers: [],
   providers: [],

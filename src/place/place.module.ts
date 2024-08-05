@@ -8,12 +8,14 @@ import { Region } from './entities/region.entity';
 import { PlaceRating } from './entities/placeRating.entity';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
+import { GptModule } from 'src/gpt/gpt.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Place, Region, PlaceRating]),
     HttpModule,
     AuthModule,
+    GptModule,
   ],
   controllers: [PlaceController],
   providers: [PlaceService],
@@ -25,6 +27,7 @@ export class PlaceModule {
       .exclude(
         { path: 'places', method: RequestMethod.GET },
         { path: 'places/:id', method: RequestMethod.GET },
+        { path: 'places/asd/asd', method: RequestMethod.GET },
       )
       .forRoutes(PlaceController);
   }

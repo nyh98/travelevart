@@ -57,7 +57,9 @@ export class PlaceController {
 
   @Get('/asd/asd')
   async dbSave() {
-    await this.placeService.dbSave();
-    return { message: 'good' };
+    return this.placeService.GPT_TEST();
+
+    // await this.placeService.dbSave();
+    // return { message: 'good' };
   }
 }
