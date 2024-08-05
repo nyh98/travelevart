@@ -28,6 +28,7 @@ export class CommentService {
                     'comment.id',
                     'comment.contents',
                     'comment.created_at',
+                    'user.id',
                     'user.user_name'
                 ])
                 .skip((page - 1) * pageSize) // 페이지네이션을 위한 offset 설정
@@ -38,6 +39,7 @@ export class CommentService {
             const formattedComments = comments.map(comment => ({
                 id: comment.id,
                 author: comment.user.user_name,
+                authorId: comment.user.id,
                 comment: comment.contents,
                 created_at: comment.created_at,
             }));
