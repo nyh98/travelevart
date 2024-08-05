@@ -1,5 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
+import { User } from 'src/user/entities/user.entity';
+import { DetailTravel } from './detailtravel.entity';
 
 @Entity('travelroute')
 export class TravelRoute {
@@ -7,7 +9,7 @@ export class TravelRoute {
   id: number;
 
   @Column()
-  user_id: string;
+  user_id: number;
   
   @Column()
   travel_name: string;
@@ -18,8 +20,12 @@ export class TravelRoute {
   })
   travelroute_range: number;
 
-  @Column()
-  name: string;
+  @ManyToOne(() => User, user => user.travelRoutes)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
+
+  @OneToMany(() => DetailTravel, detailTravel => detailTravel.travelRoute)
+  detailTravels: DetailTravel[];
 
   @OneToMany(() => Diary, diary => diary.travelRoute)
   diaries: Diary[];
