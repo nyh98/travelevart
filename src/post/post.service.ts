@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { DataSource, IsNull, Like, Not, Repository } from 'typeorm';
@@ -7,10 +7,9 @@ import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { RedisService } from 'src/redis/redis.service';
-import { type } from 'os';
 
 @Injectable()
-export class PostService {
+export class PostService implements OnModuleInit {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
@@ -23,6 +22,10 @@ export class PostService {
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
   ) {}
+
+  async onModuleInit() {
+    await this.updatePopularPosts();
+  }
 
   // 일반 게시물 조회
   async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
