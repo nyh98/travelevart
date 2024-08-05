@@ -1,6 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
 import internal from 'stream';
+import { TravelRoute } from './travelroute.entity';
+import { Place } from 'src/place/entities/place.entity';
+import { Region } from 'src/place/entities/region.entity';
 
 @Entity('detailtravel')
 export class DetailTravel {
@@ -8,17 +11,18 @@ export class DetailTravel {
   id: number;
 
   @Column()
-  custom_id: string;
+  travelroute_id: string;
   
   @Column()
-  place_id: string;
+  place_id: number;
   
   @Column()
   count: number;
 
-  @Column({
-    default: null,
-  })
+  @Column()
+  region_id: number;
+
+  @Column()
   date: Date;
 
   @Column({
@@ -38,6 +42,21 @@ export class DetailTravel {
 
   @Column()
   starting_point: string;
+
+  @Column({default: 0})
+  detailtravel_image: string;
+
+  @ManyToOne(() => TravelRoute, travelRoute => travelRoute.detailTravels)
+  @JoinColumn({ name: 'travelroute_id' })
+  travelRoute: TravelRoute;
+
+  @ManyToOne(() => Place)
+  @JoinColumn({ name: 'place_id' })
+  place: Place;
+
+  @ManyToOne(() => Region)
+  @JoinColumn({ name: 'region_id' })
+  region: Region;
 
 
   @OneToMany(() => Diary, diary => diary.detailTravel)

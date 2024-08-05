@@ -1,9 +1,26 @@
-import { Module } from '@nestjs/common';
-import { CustomService } from './custom.service';
-import { CustomController } from './custom.controller';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { TravelRoute } from './entities/travelroute.entity';
+import { DetailTravel } from './entities/detailtravel.entity';
+import { User } from 'src/user/entities/user.entity';
+import { Place } from 'src/place/entities/place.entity';
+import { Region } from 'src/place/entities/region.entity';
+import { AuthModule } from 'src/auth/auth.module';
+import { TravelRouteController } from './custom.controller';
+import { TravelRouteService } from './custom.service';
+import { authMiddleware } from 'src/auth/auth.middleware';
+import { Fork } from 'src/fork/entities/fork.entity';
 
 @Module({
-  controllers: [CustomController],
-  providers: [CustomService],
+  imports: [
+    TypeOrmModule.forFeature([TravelRoute, DetailTravel, User, Place, Region, Fork]),
+    AuthModule
+  ],
+  controllers: [TravelRouteController],
+  providers: [TravelRouteService],
 })
-export class CustomModule {}
+export class TravelRouteModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(authMiddleware).forRoutes(TravelRouteController);
+  }
+}

@@ -7,7 +7,6 @@ import { CommentModule } from './comment/comment.module';
 import { AlertModule } from './alert/alert.module';
 import { PlaceModule } from './place/place.module';
 import { CartModule } from './cart/cart.module';
-import { CustomModule } from './custom/custom.module';
 import { DiaryModule } from './diary/diary.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -15,6 +14,7 @@ import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
 import { ForkModule } from './fork/fork.module';
+import { TravelRouteModule } from './custom/custom.module';
 
 @Module({
   imports: [
@@ -41,7 +41,7 @@ import { ForkModule } from './fork/fork.module';
     AlertModule,
     PlaceModule,
     CartModule,
-    CustomModule,
+    TravelRouteModule,
     DiaryModule,
     MailModule,
     RedisModule,
