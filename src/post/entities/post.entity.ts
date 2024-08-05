@@ -3,6 +3,7 @@ import { User } from '../../user/entities/user.entity';
 import { Postlike } from './postlike.entity'
 import { Comment } from '../../comment/entities/comment.entity'
 import { Fork } from "src/fork/entities/fork.entity";
+import { Postcontent } from "./postcontent.entity";
 
 @Entity('post')
 @Index('idx_post_created_at', ['created_at'])
@@ -18,9 +19,6 @@ export class Post {
 
     @Column({ length: 100 })
     title: string;
-
-    @Column('text')
-    contents: string;
 
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
@@ -40,4 +38,7 @@ export class Post {
 
     @OneToMany(() => Fork, fork => fork.post)
     forks: Fork[];
+
+    @OneToMany(() => Postcontent, postContent => postContent.post)
+    postContents: Postcontent[];
 }

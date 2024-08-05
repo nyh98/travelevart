@@ -9,9 +9,10 @@ import { authMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
 import { Comment } from 'src/comment/entities/comment.entity'
 import { RedisModule } from 'src/redis/redis.module';
+import { Postcontent } from './entities/postcontent.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment]), AuthModule, RedisModule],
+  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment, Postcontent]), AuthModule, RedisModule],
   controllers: [PostController],
   providers: [PostService],
   exports: [PostService],
@@ -20,10 +21,6 @@ export class PostModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(authMiddleware)
-      .exclude(
-        { path: 'posts', method: RequestMethod.GET },
-        { path: 'posts/:id', method: RequestMethod.GET },
-      )
       .forRoutes(PostController);
   }
 }

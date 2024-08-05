@@ -7,6 +7,7 @@ import { Postlike } from './entities/postlike.entity';
 import { Post } from './entities/post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { RedisService } from 'src/redis/redis.service';
+import { Postcontent } from './entities/postcontent.entity';
 
 @Injectable()
 export class PostService implements OnModuleInit {
@@ -21,6 +22,8 @@ export class PostService implements OnModuleInit {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Comment)
     private readonly commentRepository: Repository<Comment>,
+    @InjectRepository(Postcontent)
+    private readonly postcontentRepository: Repository<Postcontent>,
   ) {}
 
   async onModuleInit() {
@@ -28,7 +31,7 @@ export class PostService implements OnModuleInit {
   }
 
   // 일반 게시물 조회
-  async getPosts(query: GetPostsDto): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
+  async getPosts(query: GetPostsDto, userId:number | null): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;
 
     const pageNumber = page ? parseInt(page, 10) : 1;
@@ -57,34 +60,42 @@ export class PostService implements OnModuleInit {
       .leftJoin('post.user', 'user')
       .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
       .leftJoin('post.postlike', 'postlike') // 좋아요 수를 계산하기 위한 조인
+      .leftJoinAndSelect('post.postContents', 'postContents') // 게시물 내용 조인
+      .addSelect('user.id')
       .addSelect('user.user_name') // 필요한 유저 정보만 선택
       .addSelect('user.profile_img')
       .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
       .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
+      .addGroupBy('postContents.id'); // 그룹화를 postContents.id로 추가
+
+    if (userId) {
+      qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
+        .setParameter('userId', userId);
+    }
+
+
+    if (target === '여행게시판') {
+      qb.andWhere('post.travelRoute_id IS NOT NULL');
+    } else if (target === '자유게시판') {
+      qb.andWhere('post.travelRoute_id IS NULL');
+    }
+
+    if (searchName && searchName.trim() !== '') {
+      qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
+    }
+
+    qb.orderBy('post.created_at', 'DESC');
+
+    // 페이지네이션
+    qb.skip((pageNumber - 1) * pageSizeNumber).take(pageSizeNumber);
 
     try {
-      if (target === '여행게시판') {
-        qb.andWhere('post.travelRoute_id IS NOT NULL');
-        if (searchName && searchName.trim() !== '') {
-          qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
-        }
-        qb.orderBy('post.created_at', 'DESC'); // 인기 여행게시판에 대한 정렬 기준
-      } else if (target === '자유게시판') {
-        qb.andWhere('post.travelRoute_id IS NULL');
-        if (searchName && searchName.trim() !== '') {
-          qb.andWhere('post.title LIKE :searchName', { searchName: `%${searchName}%` });
-        }
-        qb.orderBy('post.created_at', 'DESC'); // 인기 자유게시판에 대한 정렬 기준
-      }
-
-      // 페이지네이션
-      qb.skip((pageNumber - 1) * pageSizeNumber).take(pageSizeNumber);
-
       // 쿼리 실행 및 결과 가져오기
       const result = await qb.getRawAndEntities();
       const rawPosts = result.raw;
       const posts = result.entities;
+
 
       let totalPage = Math.ceil(totalPosts / pageSizeNumber);
       if (totalPage === 0) {
@@ -92,17 +103,25 @@ export class PostService implements OnModuleInit {
       }
 
       // 게시물 상세 정보 구성
-      const postDetail = rawPosts.map((rawPost, index) => ({
-        id: posts[index].id,
-        author: posts[index].user.user_name,
-        profileImg: posts[index].user.profile_img,
-        title: posts[index].title,
-        views: posts[index].view_count,
-        commentCount: parseInt(rawPost.commentCount, 10) || 0, // 조인 결과 사용
-        created_at: posts[index].created_at,
-        travelRoute_id: posts[index].travelRoute_id, // 커스텀 여행 DB에서 받아서 추가해야됨
-        like: parseInt(rawPost.likeCount, 10) || 0, // 조인 결과 사용
-        contents: posts[index].contents
+      const postDetail = posts.map((post, index) => ({
+        id: post.id,
+        author: post.user.user_name,
+        authorId: post.user.id,
+        profileImg: post.user.profile_img,
+        title: post.title,
+        views: post.view_count,
+        commentCount: parseInt(rawPosts[index].commentCount, 10) || 0,
+        created_at: post.created_at,
+        travelRoute_id: post.travelRoute_id,
+        like: parseInt(rawPosts[index].likeCount, 10) || 0,
+        contents: post.postContents.map(content => ({
+            id: content.id,
+            postId: content.post_id,
+            order: content.order,
+            text: content.contents,
+            image: content.contents_img
+        })),
+        isLiked: rawPosts[index].isLiked == 1
       }));
 
       // 응답 데이터 구조화
@@ -160,10 +179,12 @@ export class PostService implements OnModuleInit {
     let query = this.postRepository.createQueryBuilder('post')
       .leftJoin('post.postlike', 'postlike')
       .leftJoin('post.user', 'user')
+      .leftJoinAndSelect('post.postContents', 'postContents')
       .addSelect('user.user_name')
       .addSelect('user.profile_img')
       .addSelect('COUNT(postlike.id) * 2 + post.view_count AS score')
       .groupBy('post.id')
+      .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
       .orderBy('score', 'DESC')
       .limit(5);
 
@@ -174,12 +195,20 @@ export class PostService implements OnModuleInit {
     }
 
     const rawPosts = await query.getRawAndEntities();
-    return rawPosts.entities.map((post, index) => ({
+    const posts = rawPosts.entities;
+
+    return posts.map(post => ({
       id: post.id,
       author: post.user.user_name,
       profileImg: post.user.profile_img,
       title: post.title,
-      contents: post.contents,
+      contents: post.postContents.map(content => ({
+        id: content.id,
+        postId: content.post_id,
+        order: content.order,
+        text: content.contents,
+        image: content.contents_img
+      })), // postContents가 없을 경우 빈 배열 사용
     }));
   }
 
@@ -193,38 +222,57 @@ export class PostService implements OnModuleInit {
   }
 
   // 게시물 상세 조회
-  async getDetailPost(id: number): Promise<PostDetailDto> {
+  async getDetailPost(id: number, userId:number | null): Promise<PostDetailDto> {
     try {
       // 조회수를 1 증가시키는 쿼리 실행
       await this.postRepository.increment({ id }, 'view_count', 1);
 
-      const post = await this.postRepository.createQueryBuilder('post')
+      const qb = await this.postRepository.createQueryBuilder('post')
         .leftJoin('post.user', 'user')
         .leftJoin('post.comment', 'comment')
         .leftJoin('post.postlike', 'postlike')
+        .leftJoinAndSelect('post.postContents', 'postContents')
         .where('post.id = :id', { id })
+        .addSelect('user.id')
         .addSelect('user.user_name')
         .addSelect('user.profile_img')
         .addSelect('COUNT(DISTINCT comment.id) AS commentCount')
         .addSelect('COUNT(DISTINCT postlike.id) AS likeCount')
         .groupBy('post.id')
-        .getRawOne();
+        .addGroupBy('postContents.id')
 
-      if (!post) {
-        throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+
+      if (userId) {
+        qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
+          .setParameter('userId', userId);
       }
 
+      const post = await qb.getRawAndEntities();
+      const rawPost = post.raw[0];
+      const entityPost = post.entities[0];
+  
+      if (!rawPost || !entityPost) {
+        throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+      }
       return {
-        id: post.post_id,
-        author: post.user_user_name,
-        profileImg: post.user_profile_img,
-        title: post.post_title,
-        views: post.post_view_count, // 이미 증가된 조회수를 반영
-        commentCount: parseInt(post.commentCount, 10) || 0,
-        created_at: post.post_created_at,
-        travelRoute_id: post.post_travelRoute_id || 0,
-        contents: post.post_contents,
-        like: parseInt(post.likeCount, 10) || 0,
+        id: entityPost.id,
+        author: entityPost.user.user_name,
+        authorId: entityPost.user.id,
+        profileImg: entityPost.user.profile_img,
+        title: entityPost.title,
+        views: entityPost.view_count, // 이미 증가된 조회수를 반영
+        commentCount: parseInt(rawPost.commentCount, 10) || 0,
+        created_at: entityPost.created_at,
+        travelRoute_id: entityPost.travelRoute_id || 0,
+        contents: entityPost.postContents ? entityPost.postContents.map(content => ({
+          id: content.id,
+          postId: content.post_id,
+          order: content.order,
+          text: content.contents,
+          image: content.contents_img
+        })) : [],
+        like: parseInt(rawPost.likeCount, 10) || 0,
+        isLiked: rawPost.isLiked == 1,
       };
     } catch (error) {
       console.error('Error:', error); // 에러 로그 추가
@@ -235,14 +283,29 @@ export class PostService implements OnModuleInit {
   async createPost(postPostsDto: PostPostsDto, user_id: number) {
     try {
       const { title, contents, travelRoute_id } = postPostsDto;
+
+      // 새로운 게시물 생성
       const newPost = this.postRepository.create({
         user_id,
         title,
-        contents,
         travelRoute_id
       });
+      const savePost = await this.postRepository.save(newPost);
 
-      return await this.postRepository.save(newPost);
+      // 게시물 내용 저장
+      if (contents && contents.length > 0) {
+        const postContents = contents.map((content, index) => this.postcontentRepository.create({
+          post_id: savePost.id,
+          order: index + 1,
+          contents: content.text,
+          contents_img: content.image
+        }));
+        await this.postcontentRepository.save(postContents)
+      }
+
+      return {
+        message: "게시글 작성이 완료되었습니다."
+      }
     } catch (error) {
       throw new HttpException('삐빅 데이터베이스 쿼리 Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -253,27 +316,61 @@ export class PostService implements OnModuleInit {
       const { title, contents, travelRoute_id, post_id } = postPostsDto;
       const post = await this.postRepository.findOne({ where: { id: post_id }})
       if (!post) {
-        throw new HttpException('그런 게시글은 없어용~', HttpStatus.NOT_FOUND);
+        throw new HttpException('게시글이 존재하지 않습니다.', HttpStatus.NOT_FOUND);
       }
       post.title = title;
-      post.contents = contents;
       post.travelRoute_id = travelRoute_id;
-      return await this.postRepository.save(post);
 
+      await this.postcontentRepository.delete({ post_id: post.id });
+
+      if (contents && contents.length > 0) {
+        const postContents = contents.map((content, index) => this.postcontentRepository.create({
+          post_id: post.id,
+          order: index + 1,
+          contents: content.text,
+          contents_img: content.image
+        }));
+
+        await this.postcontentRepository.save(postContents);
+      }
+      return await this.postRepository.save(post);
     } catch (error) {
       throw new HttpException('삐빅 데이터베이스 쿼리 Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async deletePost(id: number) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const result = await this.postRepository.delete(id);
+      // post_contents 삭제
+      await queryRunner.manager.delete(Postcontent, { post_id: id });
+
+      // postlike 삭제
+      await queryRunner.manager.delete(Postlike, { post_id: id });
+
+      // comments 삭제
+      await queryRunner.manager.delete(Comment, { post_id: id });
+
+      // post_hashtag 삭제
+      // await queryRunner.manager.delete(PostHashtag, { post_id: id });
+
+      // post 삭제
+      const result = await queryRunner.manager.delete(Post, id);
       if (result.affected === 0) {
         throw new HttpException('삭제 실패! 그런거없음!', HttpStatus.NOT_FOUND);
       }
-      return "Success";
+
+      await queryRunner.commitTransaction();
+      return 'Success';
     } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.log(error.message);
       throw new HttpException('응 안돼~', HttpStatus.INTERNAL_SERVER_ERROR);
+    } finally {
+      await queryRunner.release();
     }
   }
 
