@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -31,10 +30,15 @@ export class PlaceController {
 
   @Get('/recommendations')
   async recommendations(@Query() recommendationsDto: RecommendationsDto) {
-    const randomPlace =
-      await this.placeService.recommendations(recommendationsDto);
+    const result = await this.placeService.recommendations(recommendationsDto);
 
-    return randomPlace;
+    return result;
+  }
+
+  @Get('/region')
+  async getRegions() {
+    const result = this.placeService.getRegions();
+    return { regions: result };
   }
 
   @Get('/:id')

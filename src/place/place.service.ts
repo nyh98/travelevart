@@ -12,6 +12,7 @@ import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
 import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
 import { GptService } from 'src/gpt/gpt.service';
+import { Region } from './entities/region.entity';
 
 @Injectable()
 export class PlaceService {
@@ -21,6 +22,7 @@ export class PlaceService {
     @InjectRepository(PlaceRating)
     private ratingRepository: Repository<PlaceRating>,
     private GptService: GptService,
+    @InjectRepository(Region) private regionRepository: Repository<Region>,
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
@@ -169,5 +171,9 @@ export class PlaceService {
       recommendationsDto.concept,
     );
     return recommendations;
+  }
+
+  async getRegions() {
+    return this.regionRepository.find();
   }
 }

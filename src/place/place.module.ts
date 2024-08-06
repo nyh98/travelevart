@@ -24,10 +24,10 @@ export class PlaceModule {
   configure(middleware: MiddlewareConsumer) {
     middleware
       .apply(authMiddleware)
-      .exclude(
-        { path: 'places', method: RequestMethod.GET },
-        { path: 'places/:id', method: RequestMethod.GET },
-      )
-      .forRoutes(PlaceController);
+      .forRoutes(
+        { path: 'places/:id/rating', method: RequestMethod.PATCH },
+        { path: 'places/:id/rating', method: RequestMethod.DELETE },
+        { path: 'places/recommendations', method: RequestMethod.GET },
+      );
   }
 }
