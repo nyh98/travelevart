@@ -20,13 +20,13 @@ export class TravelRoute {
   })
   travelroute_range: number;
 
-  @ManyToOne(() => User, user => user.travelRoutes)
+  @ManyToOne(() => User, (user) => user.travelRoutes)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @OneToMany(() => DetailTravel, detailTravel => detailTravel.travelRoute)
+  @OneToMany(() => DetailTravel, (detailTravel) => detailTravel.travelRoute)
   detailTravels: DetailTravel[];
 
-  @OneToMany(() => Diary, diary => diary.travelRoute)
+  @OneToMany(() => Diary, (diary) => diary.travelRoute)
   diaries: Diary[];
 }
