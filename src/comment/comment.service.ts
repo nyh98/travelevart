@@ -18,7 +18,7 @@ export class CommentService {
     ) {}
 
     async getComments(postId: number, page: number = 1) {
-        const pageSize = 10;
+        const pageSize = 5;
         try {
             const [comments, total] = await this.commentRepository.createQueryBuilder('comment')
                 .leftJoinAndSelect('comment.user', 'user') // 유저 정보를 조인
@@ -29,7 +29,8 @@ export class CommentService {
                     'comment.contents',
                     'comment.created_at',
                     'user.id',
-                    'user.user_name'
+                    'user.user_name',
+                    'user.profile_img',
                 ])
                 .skip((page - 1) * pageSize) // 페이지네이션을 위한 offset 설정
                 .take(pageSize) // 페이지네이션을 위한 limit 설정
@@ -38,8 +39,9 @@ export class CommentService {
             // 결과 매핑
             const formattedComments = comments.map(comment => ({
                 id: comment.id,
-                author: comment.user.user_name,
                 authorId: comment.user.id,
+                author: comment.user.user_name,
+                profileImg: comment.user.profile_img,
                 comment: comment.contents,
                 created_at: comment.created_at,
             }));
@@ -73,8 +75,9 @@ export class CommentService {
             })
 
             await this.commentRepository.save(comment);
-
-            return comment;      
+            return {
+                message: "댓글 작성이 완료되었습니다."
+            }
         } catch (error) {
             console.error('Error in getComments:', error); // 에러 로그 추가
             throw new HttpException(`POST /comments/:postId 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);

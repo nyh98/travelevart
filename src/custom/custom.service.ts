@@ -36,7 +36,7 @@ export class TravelRouteService {
 
     const travelRoute = this.travelRouteRepository.create({
       ...createTravelRouteDto,
-      user,
+      user: { id: userId },
     });
     return this.travelRouteRepository.save(travelRoute);
   }
@@ -61,9 +61,9 @@ export class TravelRouteService {
       }
 
       const detailTravel = this.detailTravelRepository.create({
-        travelRoute,
-        place,
-        region,
+        travelRoute: travelRoute,
+        place: place,
+        region: region,
         count: detail.count,
         date: detail.date,
         time: detail.time,
@@ -77,6 +77,7 @@ export class TravelRouteService {
 
       detailTravels.push({
         id: detailTravel.id,
+        travelroute_id: detailTravel.travelroute_id,
         place_id: detailTravel.place.placeId,
         region_id: detailTravel.region.id,
         count: detailTravel.count,

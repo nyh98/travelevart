@@ -9,8 +9,9 @@ import {
 } from 'typeorm';
 import { Region } from './region.entity';
 import { PlaceRating } from './placeRating.entity';
+import { DetailTravel } from 'src/custom/entities/detailtravel.entity';
 
-@Entity()
+@Entity('place')
 export class Place {
   @PrimaryGeneratedColumn()
   placeId: number;
@@ -48,4 +49,7 @@ export class Place {
 
   @OneToMany(() => PlaceRating, (placeRating) => placeRating.place)
   rating: PlaceRating[];
+
+  @OneToMany(() => DetailTravel, (detailTravel) => detailTravel.place)
+  detailTravel: DetailTravel[];
 }

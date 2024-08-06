@@ -46,18 +46,17 @@ export class DetailTravel {
   @Column({default: 0})
   detailtravel_image: string;
 
-  @ManyToOne(() => TravelRoute, travelRoute => travelRoute.detailTravels)
+  @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels)
   @JoinColumn({ name: 'travelroute_id' })
   travelRoute: TravelRoute;
 
-  @ManyToOne(() => Place)
+  @ManyToOne(() => Place, (place) => place.detailTravel)
   @JoinColumn({ name: 'place_id' })
   place: Place;
 
-  @ManyToOne(() => Region)
+  @ManyToOne(() => Region, (region) => region.detailTravels)
   @JoinColumn({ name: 'region_id' })
   region: Region;
-
 
   @OneToMany(() => Diary, diary => diary.detailTravel)
   diaries: Diary[];
