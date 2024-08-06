@@ -9,7 +9,7 @@ import { Place } from './entities/place.entity';
 import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
-import { SearchPlaceDto } from './dto/search-place.dto';
+import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
 import { GptService } from 'src/gpt/gpt.service';
 
@@ -122,61 +122,28 @@ export class PlaceService {
     await this.ratingRepository.delete(rating);
   }
 
-  async GPT_TEST() {
-    const re = await this.placeRepository
-      .createQueryBuilder('place')
-      .select([
-        'place.title, place.address, place.mapx, place.mapy, place.image',
-      ])
-      .where('place.regionId = :id1', { id1: 1 })
-      .orWhere('place.regionId = :id2', { id2: 2 })
-      .orWhere('place.regionId = :id3', { id3: 3 })
-      .orderBy('RAND()')
-      .limit(10)
-      .getRawMany();
+  async recommendations(recommendationsDto: RecommendationsDto) {
+    const { region1, region2, region3 } = recommendationsDto;
 
-    return this.GptService.test(re);
-    // return re;
-  }
+    const regions = [region1, region2, region3];
 
-  async dbSave() {
-    // const result = await this.HttpService.axiosRef.get<TourAPI>(
-    //   'https://apis.data.go.kr/B551011/KorService1/areaBasedList1?numOfRows=9999&pageNo=1&MobileOS=ETC&MobileApp=AppTest&ServiceKey=9r%2FsEsRkteEXizn9Ler4fllgsAYjEITh020%2FKtfOUheaArWMxp0Ad3jLDiPB8QV9v6ovtQqdD3oxLfj9PQR5fA%3D%3D&listYN=Y&arrange=C&contentTypeId=12&areaCode=31&sigunguCode=&cat1=&cat2=&cat3=&_type=json',
-    // );
+    const randomPlace: Place[] = [];
 
-    // result.data.response.body.items.item.forEach(async (place) => {
-    //   await this.placeRepository.insert({
-    //     address: place.addr1,
-    //     image: place.firstimage,
-    //     title: place.title,
-    //     mapx: Number(place.mapx),
-    //     mapy: Number(place.mapy),
-    //     regionId: 3
-    //   });
-    // });
-    // console.log('끝');
+    const promise = regions.map(async (region) => {
+      return this.placeRepository
+        .createQueryBuilder('place')
+        .select([
+          'place.title, place.address, place.mapx, place.mapy, place.image',
+        ])
+        .where('place.regionId = :id', { id: region })
+        .orderBy('RAND()')
+        .limit(3)
+        .getRawMany();
+    });
 
-    // result.data.response.body.items.item.forEach(async (place) => {
-    //   await this.HttpService.axiosRef
-    //     .get<TourAPIDetail>(
-    //       `https://apis.data.go.kr/B551011/KorService1/detailCommon1?ServiceKey=4qAsXp8XRxSLrU08TFz6Qp9ah%2Fj4Qj4C5cnGS0Op%2BWSBEN2WpdIZ1jnWxTtNCUhlwy0GYGg5vIy0KnuHscZtJQ%3D%3D&contentTypeId=12&contentId=${place.contentid}&MobileOS=ETC&MobileApp=AppTest&defaultYN=Y&firstImageYN=Y&areacodeYN=Y&catcodeYN=Y&addrinfoYN=Y&mapinfoYN=Y&overviewYN=Y&_type=json`,
-    //     )
-    //     .then(async (detail) => {
-    //       if (detail.data.response) {
-    //         await this.placeRepository.insert({
-    //           address: place.addr1,
-    //           image: place.firstimage ? place.firstimage : null,
-    //           title: place.title,
-    //           mapx: Number(place.mapx),
-    //           mapy: Number(place.mapy),
-    //           descreiption: detail.data.response.body.items.item[0].overview,
-    //           regionId: 17,
-    //         });
-    //       }
-    //     })
-    //     .catch((e) => console.log(e));
-    // });
+    const result = await Promise.all(promise);
 
-    console.log('저장 끝~');
+    result.forEach((places) => randomPlace.push(...places));
+    return randomPlace;
   }
 }

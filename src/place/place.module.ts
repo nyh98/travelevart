@@ -27,7 +27,6 @@ export class PlaceModule {
       .exclude(
         { path: 'places', method: RequestMethod.GET },
         { path: 'places/:id', method: RequestMethod.GET },
-        { path: 'places/asd/asd', method: RequestMethod.GET },
       )
       .forRoutes(PlaceController);
   }

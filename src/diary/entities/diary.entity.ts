@@ -23,6 +23,9 @@ export class Diary {
   @Column()
   detailtravel_id: number;
 
+  @Column({default: 0})
+  diary_image: string;
+
   @ManyToOne(() => User, (user) => user.diaries)
   @JoinColumn({ name: 'user_id' })
   user: User;
