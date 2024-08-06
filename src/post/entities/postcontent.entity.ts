@@ -15,7 +15,7 @@ export class Postcontent {
     @Column({ type: 'text', nullable: true  })
     contents: string;
 
-    @Column({ length: 100, nullable: true })
+    @Column({ length: 255, nullable: true })
     contents_img: string;
 
     @ManyToOne(() => Post, post => post.postContents)

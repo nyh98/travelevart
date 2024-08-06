@@ -11,7 +11,6 @@ import {
   HttpStatus,
   ParseIntPipe,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { GetPostsDto, PostPostsDto } from './dto/post.dto';
 import { PostService } from './post.service';
