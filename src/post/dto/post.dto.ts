@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, ValidateIf } from "class-validator";
+import { Type } from "class-transformer";
+import { IsNotEmpty, IsNumber, IsNumberString, IsOptional, IsString, ValidateIf, ValidateNested } from "class-validator";
 
 // 게시글 조회 Req
 export class GetPostsDto {
@@ -19,15 +20,26 @@ export class GetPostsDto {
     pageSize?: string
 }
 
+export class CreatePostContentDto  {
+    @IsString()
+    @IsNotEmpty()
+    text: string;
+  
+    @IsString()
+    @IsOptional()
+    image?: string;
+}
+
 // 게시글 작성 및 수정
 export class PostPostsDto {
     @IsString()
     @IsNotEmpty()
     title: string;
 
-    @IsString()
+    @ValidateNested({ each: true })
+    @Type(() => CreatePostContentDto)
     @IsOptional()
-    contents?: string;
+    contents?: CreatePostContentDto[];
 
     @IsNumber()
     @IsOptional()
@@ -39,10 +51,19 @@ export class PostPostsDto {
     post_id: number;
 }
 
+export interface PostContentDto {
+    id: number;
+    postId: number;
+    order: number;
+    text: string;
+    image: string;
+}
+
 // 게시글 조회 Res
 export interface PostDetailDto {
     id: number;
     author: string;
+    authorId: number;
     profileImg: string;
     title: string;
     views: number;
@@ -50,7 +71,8 @@ export interface PostDetailDto {
     created_at: Date;
     travelRoute_id: number;
     like: number;
-    contents?: string;
+    contents?: PostContentDto[];
+    isLiked?: boolean;
 }
 
 // 게시글 조회 Res
@@ -59,5 +81,5 @@ export interface PopularPostDetailDto {
     author: string;
     profileImg: string
     title: string;
-    contents?: string;
+    contents?: PostContentDto[];
 }

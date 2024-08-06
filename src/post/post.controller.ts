@@ -11,6 +11,7 @@ import {
   HttpStatus,
   ParseIntPipe,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import { GetPostsDto, PostPostsDto } from './dto/post.dto';
 import { PostService } from './post.service';
@@ -22,9 +23,13 @@ export class PostController {
 
   // 게시글들 조회
   @Get()
-  async getPosts(@Query() query: GetPostsDto) {
+  async getPosts(
+    @Query() query: GetPostsDto,
+    @Req() req:Request
+  ) {
     try {
-      return await this.postService.getPosts(query);
+      const userId = req.user ? req.user.id : null;
+      return await this.postService.getPosts(query, userId);
     } catch (error) {
       // 여기서 추가적인 로깅이나 에러 처리를 할 수 있습니다.
       throw new HttpException(
@@ -36,8 +41,12 @@ export class PostController {
 
   // 인기 게시글 조회
   @Get('/popular')
-  async getPopularPosts(@Query('target') target:string ) {
+  async getPopularPosts(
+    @Query('target') target:string,
+    @Req() req:Request
+  ) {
     try {
+      const userId = req.user ? req.user.id : null;
       return await this.postService.getPopularPosts(target);
     } catch (error) {
       throw new HttpException(
@@ -49,9 +58,13 @@ export class PostController {
 
   // 게시글 상세 조회
   @Get(':id')
-  async getDetailPost(@Param('id', ParseIntPipe) id: number) {
+  async getDetailPost(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() req:Request
+  ) {
     try {
-      return await this.postService.getDetailPost(id);
+      const userId = req.user ? req.user.id : null;
+      return await this.postService.getDetailPost(id, userId);
     } catch (error) {
       // 여기서 추가적인 로깅이나 에러 처리를 할 수 있습니다.
       throw new HttpException(
@@ -63,7 +76,10 @@ export class PostController {
 
   // 게시글 작성
   @Post()
-  async createPost(@Body() postPostsDto: PostPostsDto, @Req() req: Request) {
+  async createPost(
+    @Body() postPostsDto: PostPostsDto, 
+    @Req() req: Request
+  ) {
     try {
       return await this.postService.createPost(postPostsDto, req.user.id);
     } catch (error) {
