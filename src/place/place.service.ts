@@ -9,8 +9,10 @@ import { Place } from './entities/place.entity';
 import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
-import { SearchPlaceDto } from './dto/search-place.dto';
+import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
+import { GptService } from 'src/gpt/gpt.service';
+import { Region } from './entities/region.entity';
 
 @Injectable()
 export class PlaceService {
@@ -19,6 +21,8 @@ export class PlaceService {
     private HttpService: HttpService,
     @InjectRepository(PlaceRating)
     private ratingRepository: Repository<PlaceRating>,
+    private GptService: GptService,
+    @InjectRepository(Region) private regionRepository: Repository<Region>,
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
@@ -120,44 +124,56 @@ export class PlaceService {
     await this.ratingRepository.delete(rating);
   }
 
-  async dbSave() {
-    // const result = await this.HttpService.axiosRef.get<TourAPI>(
-    //   'https://apis.data.go.kr/B551011/KorService1/areaBasedList1?numOfRows=9999&pageNo=1&MobileOS=ETC&MobileApp=AppTest&ServiceKey=9r%2FsEsRkteEXizn9Ler4fllgsAYjEITh020%2FKtfOUheaArWMxp0Ad3jLDiPB8QV9v6ovtQqdD3oxLfj9PQR5fA%3D%3D&listYN=Y&arrange=C&contentTypeId=12&areaCode=37&sigunguCode=&cat1=&cat2=&cat3=&_type=json',
-    // );
+  async recommendations(recommendationsDto: RecommendationsDto) {
+    const { region1, region2, region3 } = recommendationsDto;
 
-    // result.data.response.body.items.item.forEach(async (place) => {
-    //   await this.placeRepository.insert({
-    //     address: place.addr1,
-    //     image: place.firstimage,
-    //     title: place.title,
-    //     mapx: Number(place.mapx),
-    //     mapy: Number(place.mapy),
-    //     regionId: 3
-    //   });
-    // });
-    // console.log('끝');
+    const regions = [region1, region2, region3];
 
-    // result.data.response.body.items.item.forEach(async (place) => {
-    //   await this.HttpService.axiosRef
-    //     .get<TourAPIDetail>(
-    //       `https://apis.data.go.kr/B551011/KorService1/detailCommon1?ServiceKey=4qAsXp8XRxSLrU08TFz6Qp9ah%2Fj4Qj4C5cnGS0Op%2BWSBEN2WpdIZ1jnWxTtNCUhlwy0GYGg5vIy0KnuHscZtJQ%3D%3D&contentTypeId=12&contentId=${place.contentid}&MobileOS=ETC&MobileApp=AppTest&defaultYN=Y&firstImageYN=Y&areacodeYN=Y&catcodeYN=Y&addrinfoYN=Y&mapinfoYN=Y&overviewYN=Y&_type=json`,
-    //     )
-    //     .then(async (detail) => {
-    //       if (detail.data.response) {
-    //         await this.placeRepository.insert({
-    //           address: place.addr1,
-    //           image: place.firstimage ? place.firstimage : null,
-    //           title: place.title,
-    //           mapx: Number(place.mapx),
-    //           mapy: Number(place.mapy),
-    //           descreiption: detail.data.response.body.items.item[0].overview,
-    //           regionId: 12,
-    //         });
-    //       }
-    //     })
-    //     .catch((e) => console.log(e));
-    // });
+    const randomPlace: Place[] = [];
 
-    console.log('저장 끝~');
+    const millisecond =
+      new Date(recommendationsDto.edate).getTime() -
+      new Date(recommendationsDto.sdate).getTime();
+
+    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산후 여분 여행지 * 2
+
+    console.log(limit);
+    if (limit > 10) {
+      throw new BadRequestException('여행 추천 일정은 최대 10일 입니다');
+    }
+
+    const promise = regions.map(async (region) => {
+      return this.placeRepository
+        .createQueryBuilder('place')
+        .select([
+          'place.title, place.address, place.mapx, place.mapy, place.image',
+        ])
+        .where('place.regionId = :id', { id: region })
+        .orderBy('RAND()')
+        .limit(limit * 2)
+        .getRawMany();
+    });
+
+    const result = await Promise.all(promise);
+
+    result.forEach((places) => randomPlace.push(...places));
+
+    const transportation =
+      recommendationsDto.transportation === 'public' ? '대중교통' : '자차';
+
+    const recommendations = await this.GptService.recommendations(
+      randomPlace,
+      recommendationsDto.age,
+      recommendationsDto.sdate,
+      recommendationsDto.edate,
+      transportation,
+      recommendationsDto.people,
+      recommendationsDto.concept,
+    );
+    return recommendations;
+  }
+
+  async getRegions() {
+    return this.regionRepository.find();
   }
 }

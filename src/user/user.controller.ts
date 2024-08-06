@@ -58,12 +58,12 @@ export class UserController {
       userName = replaceData.userName;
     }
 
-    await this.userService.replaceUserInfoById(req.user.id, imgUrl, userName);
-
     //이미지나 닉네임이 없을때
     if (!imgUrl && !userName) {
       throw new BadRequestException('필요한 데이터가 없습니다');
     }
+
+    await this.userService.replaceUserInfoById(req.user.id, imgUrl, userName);
 
     return {
       message: '정보 변경 완료',

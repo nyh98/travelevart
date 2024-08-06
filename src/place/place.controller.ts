@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { PlaceService } from './place.service';
 import { CreateOrUpdateRatingDto } from './dto/create-place.dto';
-import { SearchPlaceDto } from './dto/search-place.dto';
+import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
 import { Request } from 'express';
 
 @Controller('places')
@@ -26,6 +26,19 @@ export class PlaceController {
       currentPage: search.page,
       totalPage: Math.ceil(totalCount / search.limit),
     };
+  }
+
+  @Get('/recommendations')
+  async recommendations(@Query() recommendationsDto: RecommendationsDto) {
+    const result = await this.placeService.recommendations(recommendationsDto);
+
+    return result;
+  }
+
+  @Get('/region')
+  async getRegions() {
+    const result = this.placeService.getRegions();
+    return { regions: result };
   }
 
   @Get('/:id')
@@ -53,11 +66,5 @@ export class PlaceController {
   async deletePlaceRating(@Param('id') placeId: number, @Req() req: Request) {
     await this.placeService.deletePlaceRating(placeId, req.user.id);
     return { message: '별점 삭제 되었습니다' };
-  }
-
-  @Get('/asd/asd')
-  async dbSave() {
-    await this.placeService.dbSave();
-    return { message: 'good' };
   }
 }
