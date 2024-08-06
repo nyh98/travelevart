@@ -30,8 +30,11 @@ export class PlaceController {
   }
 
   @Get('/recommendations')
-  async dbSave(@Query() recommendationsDto: RecommendationsDto) {
-    return this.placeService.recommendations(recommendationsDto);
+  async recommendations(@Query() recommendationsDto: RecommendationsDto) {
+    const randomPlace =
+      await this.placeService.recommendations(recommendationsDto);
+
+    return randomPlace;
   }
 
   @Get('/:id')

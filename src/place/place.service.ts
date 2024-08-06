@@ -129,6 +129,17 @@ export class PlaceService {
 
     const randomPlace: Place[] = [];
 
+    const millisecond =
+      new Date(recommendationsDto.edate).getTime() -
+      new Date(recommendationsDto.sdate).getTime();
+
+    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산후 여분 여행지 * 2
+
+    console.log(limit);
+    if (limit > 10) {
+      throw new BadRequestException('여행 추천 일정은 최대 10일 입니다');
+    }
+
     const promise = regions.map(async (region) => {
       return this.placeRepository
         .createQueryBuilder('place')
@@ -137,13 +148,26 @@ export class PlaceService {
         ])
         .where('place.regionId = :id', { id: region })
         .orderBy('RAND()')
-        .limit(3)
+        .limit(limit * 2)
         .getRawMany();
     });
 
     const result = await Promise.all(promise);
 
     result.forEach((places) => randomPlace.push(...places));
-    return randomPlace;
+
+    const transportation =
+      recommendationsDto.transportation === 'public' ? '대중교통' : '자차';
+
+    const recommendations = await this.GptService.recommendations(
+      randomPlace,
+      recommendationsDto.age,
+      recommendationsDto.sdate,
+      recommendationsDto.edate,
+      transportation,
+      recommendationsDto.people,
+      recommendationsDto.concept,
+    );
+    return recommendations;
   }
 }
