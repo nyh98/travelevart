@@ -37,6 +37,9 @@ export class Place {
   @Column('text', { nullable: true })
   descreiption: string;
 
+  @Column({ name: 'view_count', default: 0 })
+  viewCount: number;
+
   @OneToMany(() => Cart, (cart) => cart.place)
   carts: Cart[];
 

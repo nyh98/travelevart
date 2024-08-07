@@ -28,6 +28,9 @@ export class PlaceRating {
   @Column()
   userId: number;
 
-  @Column({ type: 'tinyint' })
+  @Column('decimal', { precision: 2, scale: 1 })
   ratingValue: number;
+
+  @Column()
+  review: string;
 }
