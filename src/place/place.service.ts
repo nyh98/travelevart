@@ -50,7 +50,7 @@ export class PlaceService {
     }
 
     return this.placeRepository.findAndCount({
-      select: ['placeId', 'address', 'image', 'title', 'mapx', 'mapy'],
+      select: ['id', 'address', 'image', 'title', 'mapx', 'mapy'],
       where: where,
       skip: (searchOption.page - 1) * searchOption.limit,
       take: searchOption.limit,
@@ -65,15 +65,8 @@ export class PlaceService {
     }
 
     const place = await this.placeRepository.findOne({
-      select: [
-        'placeId',
-        'address',
-        'image',
-        'title',
-        'descreiption',
-        'viewCount',
-      ],
-      where: { placeId: isNumber },
+      select: ['id', 'address', 'image', 'title', 'descreiption'],
+      where: { id: isNumber },
     });
 
     if (place) {
@@ -97,7 +90,7 @@ export class PlaceService {
     }
 
     const place = await this.placeRepository.findOne({
-      where: { placeId: placeId },
+      where: { id: placeId },
     });
 
     if (!place) {
@@ -106,7 +99,7 @@ export class PlaceService {
 
     //기존에 여행지에 대한 별점을 준게 있는지 확인
     const rating = await this.ratingRepository.findOne({
-      where: { placeId: place.placeId, userId },
+      where: { placeId: place.id, userId },
     });
 
     try {
@@ -119,7 +112,7 @@ export class PlaceService {
         });
       } else {
         const newRating = this.ratingRepository.create({
-          placeId: place.placeId,
+          placeId: place.id,
           userId,
           ratingValue: ratingData.ratingValue,
           review: ratingData.review,

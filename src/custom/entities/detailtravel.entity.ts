@@ -32,25 +32,19 @@ export class DetailTravel {
   @Column()
   date: Date;
 
-  @Column({
-    default: 0,
-  })
+  @Column()
   time: string;
 
-  @Column({
-    default: 0,
-  })
+  @Column()
   contents: string;
 
-  @Column({
-    default: 0,
-  })
+  @Column()
   traffic_info: string;
 
   @Column()
   starting_point: string;
 
-  @Column({ default: 0 })
+  @Column()
   detailtravel_image: string;
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels)

@@ -14,7 +14,7 @@ import { DetailTravel } from 'src/custom/entities/detailtravel.entity';
 @Entity('place')
 export class Place {
   @PrimaryGeneratedColumn()
-  placeId: number;
+  id: number;
 
   @Column()
   address: string;
