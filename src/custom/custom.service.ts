@@ -52,7 +52,7 @@ export class TravelRouteService {
     for (const detail of details) {
       const place = await this.placeRepository.findOne({ where: { placeId: detail.place_id } });
       if (!place) {
-        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
+        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니당.`);
       }
 
       const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
