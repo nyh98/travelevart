@@ -9,10 +9,15 @@ import { Place } from './entities/place.entity';
 import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
-import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
+import {
+  PaginationDto,
+  RecommendationsDto,
+  SearchPlaceDto,
+} from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
 import { GptService } from 'src/gpt/gpt.service';
 import { Region } from './entities/region.entity';
+import { CreateOrUpdateRatingDto } from './dto/create-place.dto';
 
 @Injectable()
 export class PlaceService {
@@ -59,19 +64,36 @@ export class PlaceService {
       return null;
     }
 
-    return this.placeRepository.findOne({
-      select: ['placeId', 'address', 'image', 'title', 'descreiption'],
+    const place = await this.placeRepository.findOne({
+      select: [
+        'placeId',
+        'address',
+        'image',
+        'title',
+        'descreiption',
+        'viewCount',
+      ],
       where: { placeId: isNumber },
     });
+
+    if (place) {
+      this.placeRepository.save({ ...place, viewCount: place.viewCount + 1 });
+    }
+
+    return place;
   }
 
   async updatePlaceRating(
     placeId: number,
     userId: number,
-    ratingValue: number,
+    ratingData: CreateOrUpdateRatingDto,
   ) {
     if (!placeId) {
       throw new BadRequestException('id는 숫자여야 합니다');
+    }
+
+    if (ratingData.ratingValue % 0.5 !== 0) {
+      throw new BadRequestException('별점은 0.5점 단위입니다');
     }
 
     const place = await this.placeRepository.findOne({
@@ -90,12 +112,17 @@ export class PlaceService {
     try {
       //기존에 썻던 별점이 있으면 업데이트 없으면 새로 추가
       if (rating) {
-        await this.ratingRepository.save({ ...rating, ratingValue });
+        await this.ratingRepository.save({
+          ...rating,
+          ratingValue: ratingData.ratingValue,
+          review: ratingData.review,
+        });
       } else {
         const newRating = this.ratingRepository.create({
           placeId: place.placeId,
           userId,
-          ratingValue,
+          ratingValue: ratingData.ratingValue,
+          review: ratingData.review,
         });
         await this.ratingRepository.save(newRating);
       }
@@ -135,9 +162,8 @@ export class PlaceService {
       new Date(recommendationsDto.edate).getTime() -
       new Date(recommendationsDto.sdate).getTime();
 
-    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산후 여분 여행지 * 2
+    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산
 
-    console.log(limit);
     if (limit > 10) {
       throw new BadRequestException('여행 추천 일정은 최대 10일 입니다');
     }
@@ -175,5 +201,17 @@ export class PlaceService {
 
   async getRegions() {
     return this.regionRepository.find();
+  }
+
+  async getRating(placeId: number, pagination: PaginationDto) {
+    if (isNaN(placeId)) {
+      throw new BadRequestException('id는 숫자여야 합니다');
+    }
+
+    return this.ratingRepository.find({
+      where: { placeId },
+      skip: (pagination.page - 1) * pagination.limit,
+      take: pagination.limit,
+    });
   }
 }

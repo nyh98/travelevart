@@ -25,7 +25,7 @@ export class PlaceModule {
     middleware
       .apply(authMiddleware)
       .forRoutes(
-        { path: 'places/:id/rating', method: RequestMethod.PATCH },
+        { path: 'places/:id/rating', method: RequestMethod.POST },
         { path: 'places/:id/rating', method: RequestMethod.DELETE },
         { path: 'places/recommendations', method: RequestMethod.GET },
       );

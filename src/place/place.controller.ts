@@ -5,12 +5,17 @@ import {
   Get,
   Param,
   Patch,
+  Post,
   Query,
   Req,
 } from '@nestjs/common';
 import { PlaceService } from './place.service';
 import { CreateOrUpdateRatingDto } from './dto/create-place.dto';
-import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
+import {
+  PaginationDto,
+  RecommendationsDto,
+  SearchPlaceDto,
+} from './dto/search-place.dto';
 import { Request } from 'express';
 
 @Controller('places')
@@ -41,6 +46,14 @@ export class PlaceController {
     return { regions: result };
   }
 
+  @Get('/:id/rating')
+  async getPlaceRating(
+    @Param('id') placeId: number,
+    @Query() pagination: PaginationDto,
+  ) {
+    return this.placeService.getRating(placeId, pagination);
+  }
+
   @Get('/:id')
   async getTravelDetial(@Param('id') placeId: string) {
     const item = await this.placeService.getPlaceDetail(placeId);
@@ -48,23 +61,19 @@ export class PlaceController {
     return { item };
   }
 
-  @Patch('/:id/rating')
+  @Post('/:id/rating')
   async updatePlaceRating(
     @Param('id') placeId: number,
     @Req() req: Request,
     @Body() ratingData: CreateOrUpdateRatingDto,
   ) {
-    await this.placeService.updatePlaceRating(
-      placeId,
-      req.user.id,
-      ratingData.ratingValue,
-    );
-    return { message: '별점 등록 되었습니다' };
+    await this.placeService.updatePlaceRating(placeId, req.user.id, ratingData);
+    return { message: '리뷰가 등록 되었습니다' };
   }
 
   @Delete('/:id/rating')
   async deletePlaceRating(@Param('id') placeId: number, @Req() req: Request) {
     await this.placeService.deletePlaceRating(placeId, req.user.id);
-    return { message: '별점 삭제 되었습니다' };
+    return { message: '리뷰가 삭제 되었습니다' };
   }
 }
