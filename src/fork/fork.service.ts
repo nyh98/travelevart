@@ -32,7 +32,11 @@ export class ForkService {
       throw new ConflictException('이미 포크한 게시글입니다.');
     }
 
-    const fork = this.forkRepository.create({ user, post });
+    const fork = this.forkRepository.create({ 
+      user_id: userId, 
+      post_id: postId,
+      forked_at: new Date(), 
+    });
     const savedFork = await this.forkRepository.save(fork);
 
     return {

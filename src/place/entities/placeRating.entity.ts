@@ -31,6 +31,6 @@ export class PlaceRating {
   @Column('decimal', { precision: 2, scale: 1 })
   ratingValue: number;
 
-  @Column()
+  @Column('varchar', { length: 300 })
   review: string;
 }
