@@ -9,11 +9,12 @@ import { AuthModule } from 'src/auth/auth.module';
 import { TravelRouteController } from './custom.controller';
 import { TravelRouteService } from './custom.service';
 import { authMiddleware } from 'src/auth/auth.middleware';
-import { Fork } from 'src/fork/entities/fork.entity';
+import { Fork } from './entities/fork.entity';
+import { Post } from 'src/post/entities/post.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TravelRoute, DetailTravel, User, Place, Region, Fork]),
+    TypeOrmModule.forFeature([TravelRoute, DetailTravel, User, Place, Region, Fork, Post]),
     AuthModule
   ],
   controllers: [TravelRouteController],

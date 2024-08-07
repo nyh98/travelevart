@@ -4,9 +4,9 @@ import { Postlike } from '../../post/entities/postlike.entity';
 import { Comment } from '../../comment/entities/comment.entity';
 import { Diary } from 'src/diary/entities/diary.entity';
 import { Cart } from 'src/cart/entities/cart.entity';
-import { Fork } from 'src/fork/entities/fork.entity';
 import { PlaceRating } from 'src/place/entities/placeRating.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
+import { Fork } from 'src/custom/entities/fork.entity';
 
 @Entity('user')
 export class User {

@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
 import internal from 'stream';
 import { TravelRoute } from './travelroute.entity';
@@ -19,10 +12,10 @@ export class DetailTravel {
 
   @Column()
   travelroute_id: number;
-
+  
   @Column()
   place_id: number;
-
+  
   @Column()
   count: number;
 
@@ -59,6 +52,6 @@ export class DetailTravel {
   @JoinColumn({ name: 'region_id' })
   region: Region;
 
-  @OneToMany(() => Diary, (diary) => diary.detailTravel)
+  @OneToMany(() => Diary, diary => diary.detailTravel)
   diaries: Diary[];
 }

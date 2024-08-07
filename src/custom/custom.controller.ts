@@ -6,7 +6,9 @@ import { TravelRouteService } from './custom.service';
 
 @Controller('travelroutes')
 export class TravelRouteController {
-  constructor(private readonly travelRouteService: TravelRouteService) {}
+  constructor(
+    private readonly travelRouteService: TravelRouteService,
+  ) {}
 
   @Post()
   async createTravelRoute(
@@ -48,16 +50,38 @@ export class TravelRouteController {
     }
   }
 
-  @Post('fork/:forkId')
-  async forkTravelRoute(
-    @Param('forkId') forkId: number,
+  @Post(':postId/forkpost')
+  async forkPost(
+    @Param('postId') postId: number,
     @Req() req: Request,
-    @Body() createTravelRouteDto: CreateTravelRouteDto,
     @Res() res: Response,
   ) {
     try {
-      const travelRoute = await this.travelRouteService.forkTravelRoute(req.user.id, forkId, createTravelRouteDto);
-      return res.status(HttpStatus.CREATED).json(travelRoute);
+      const fork = await this.travelRouteService.forkPost(req.user.id, postId);
+      return res.status(HttpStatus.CREATED).json(fork);
+    } catch (error) {
+      if (error instanceof HttpException) {
+        return res.status(error.getStatus()).json({ message: error.message });
+      }
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
+    }
+  }
+
+  @Post(':forkId/forktravelroute')
+  async forkTravelRoute(
+    @Param('forkId') forkId: number,
+    @Body() details: UpdateDetailTravelDto[],
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const user = req.user; // 미들웨어에서 설정한 유저 정보
+      if (!user) {
+        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+      }
+
+      const detailTravels = await this.travelRouteService.forkTravelRoute(req.user.id, forkId, details);
+      return res.status(HttpStatus.OK).json(detailTravels);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.getStatus()).json({ message: error.message });
