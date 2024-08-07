@@ -8,7 +8,17 @@ import {
   Length,
 } from 'class-validator';
 
-export class SearchPlaceDto {
+export class PaginationDto {
+  @Type(() => Number)
+  @IsNumber({}, { message: 'page는 숫자여야 합니다' })
+  page: number = 1;
+
+  @Type(() => Number)
+  @IsNumber({}, { message: 'limit은 숫자여야 합니다' })
+  limit: number = 12;
+}
+
+export class SearchPlaceDto extends PaginationDto {
   @Type(() => Number)
   @IsNumber({}, { message: 'region은 숫자여야 합니다' })
   @IsOptional()
@@ -17,14 +27,6 @@ export class SearchPlaceDto {
   district: string;
 
   name: string;
-
-  @Type(() => Number)
-  @IsNumber({}, { message: 'page는 숫자여야 합니다' })
-  page: number = 1;
-
-  @Type(() => Number)
-  @IsNumber({}, { message: 'limit은 숫자여야 합니다' })
-  limit: number = 12;
 }
 
 export class RecommendationsDto {

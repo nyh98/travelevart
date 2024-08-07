@@ -9,10 +9,16 @@ import { Place } from './entities/place.entity';
 import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
-import { RecommendationsDto, SearchPlaceDto } from './dto/search-place.dto';
+import {
+  PaginationDto,
+  RecommendationsDto,
+  SearchPlaceDto,
+} from './dto/search-place.dto';
 import { PlaceRating } from './entities/placeRating.entity';
 import { GptService } from 'src/gpt/gpt.service';
 import { Region } from './entities/region.entity';
+import { CreateOrUpdateRatingDto } from './dto/create-place.dto';
+import { CartService } from 'src/cart/cart.service';
 
 @Injectable()
 export class PlaceService {
@@ -23,6 +29,7 @@ export class PlaceService {
     private ratingRepository: Repository<PlaceRating>,
     private GptService: GptService,
     @InjectRepository(Region) private regionRepository: Repository<Region>,
+    private cartService: CartService,
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
@@ -52,23 +59,56 @@ export class PlaceService {
     });
   }
 
-  async getPlaceDetail(placeId: string) {
-    const isNumber = Number(placeId);
-
-    if (!isNumber) {
-      return null;
+  async getPlaceDetail(placeId: number, userId?: number) {
+    console.log(userId);
+    if (isNaN(placeId)) {
+      throw new BadRequestException('id는 숫자여야 합니다');
     }
 
-    return this.placeRepository.findOne({
-      select: ['id', 'address', 'image', 'title', 'descreiption'],
-      where: { id: isNumber },
+    const place = await this.placeRepository.findOne({
+      select: [
+        'id',
+        'address',
+        'image',
+        'title',
+        'descreiption',
+        'viewCount',
+        'mapx',
+        'mapy',
+      ],
+      where: { id: placeId },
     });
+
+    if (place) {
+      this.placeRepository.save({ ...place, viewCount: place.viewCount + 1 });
+    }
+
+    const result = await this.ratingRepository
+      .createQueryBuilder('rating')
+      .select('AVG(rating.ratingValue) AS average')
+      .where('rating.placeId = :id', { id: placeId })
+      .getRawOne();
+
+    const numberAverage = Number(Number(result.average).toFixed(1));
+
+    const totalSaveCount = await this.cartService.getTotalSaveCount(placeId);
+
+    let isSaved: boolean;
+    if (userId) {
+      const result = await this.cartService.isSaved(userId, placeId);
+      console.log(result);
+      isSaved = Boolean(result);
+    } else {
+      isSaved = false;
+    }
+
+    return { place, average: numberAverage, totalSaveCount, isSaved };
   }
 
   async updatePlaceRating(
     placeId: number,
     userId: number,
-    ratingValue: number,
+    ratingData: CreateOrUpdateRatingDto,
   ) {
     if (!placeId) {
       throw new BadRequestException('id는 숫자여야 합니다');
@@ -90,12 +130,18 @@ export class PlaceService {
     try {
       //기존에 썻던 별점이 있으면 업데이트 없으면 새로 추가
       if (rating) {
-        await this.ratingRepository.save({ ...rating, ratingValue });
+        await this.ratingRepository.save({
+          ...rating,
+          ratingValue: ratingData.ratingValue,
+          review: ratingData.review,
+        });
       } else {
         const newRating = this.ratingRepository.create({
           placeId: place.id,
           userId,
-          ratingValue,
+          ratingValue: ratingData.ratingValue,
+          review: ratingData.review,
+          createdAt: new Date(),
         });
         await this.ratingRepository.save(newRating);
       }
@@ -135,9 +181,8 @@ export class PlaceService {
       new Date(recommendationsDto.edate).getTime() -
       new Date(recommendationsDto.sdate).getTime();
 
-    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산후 여분 여행지 * 2
+    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산
 
-    console.log(limit);
     if (limit > 10) {
       throw new BadRequestException('여행 추천 일정은 최대 10일 입니다');
     }
@@ -175,5 +220,29 @@ export class PlaceService {
 
   async getRegions() {
     return this.regionRepository.find();
+  }
+
+  async getRating(placeId: number, pagination: PaginationDto) {
+    if (isNaN(placeId)) {
+      throw new BadRequestException('id는 숫자여야 합니다');
+    }
+
+    return this.ratingRepository
+      .createQueryBuilder('rating')
+      .leftJoinAndSelect('rating.user', 'user')
+      .select([
+        'rating.id',
+        'rating.placeId',
+        'rating.ratingValue',
+        'rating.review',
+        'rating.createdAt',
+        'user.id',
+        'user.profile_img',
+        'user.user_name',
+      ])
+      .where('rating.placeId = :placeId', { placeId })
+      .skip((pagination.page - 1) * pagination.limit)
+      .take(pagination.limit)
+      .getManyAndCount();
   }
 }
