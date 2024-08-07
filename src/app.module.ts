@@ -13,7 +13,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
-import { ForkModule } from './fork/fork.module';
 import { TravelRouteModule } from './custom/custom.module';
 import { GptModule } from './gpt/gpt.module';
 
@@ -48,7 +47,6 @@ import { GptModule } from './gpt/gpt.module';
     RedisModule,
     ScheduleModule,
     S3Module,
-    ForkModule,
     GptModule,
   ],
   controllers: [],

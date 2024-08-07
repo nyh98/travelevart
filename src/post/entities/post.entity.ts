@@ -2,8 +2,9 @@ import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGenerat
 import { User } from '../../user/entities/user.entity';
 import { Postlike } from './postlike.entity'
 import { Comment } from '../../comment/entities/comment.entity'
-import { Fork } from "src/fork/entities/fork.entity";
 import { Postcontent } from "./postcontent.entity";
+import { TravelRoute } from "src/custom/entities/travelroute.entity";
+import { Fork } from "src/custom/entities/fork.entity";
 
 @Entity('post')
 @Index('idx_post_created_at', ['created_at'])
@@ -41,4 +42,8 @@ export class Post {
 
     @OneToMany(() => Postcontent, postContent => postContent.post)
     postContents: Postcontent[];
+
+    @ManyToOne(() => TravelRoute)
+    @JoinColumn({ name: 'travelRoute_id' })
+    travelRoute: TravelRoute;
 }
