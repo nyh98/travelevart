@@ -28,10 +28,24 @@ export class Place {
   @Column('tinyint', { width: 1, default: 0 })
   event: number;
 
-  @Column('decimal', { precision: 13, scale: 10 })
+  @Column('decimal', {
+    precision: 13,
+    scale: 10,
+    transformer: {
+      to: (value: string) => value,
+      from: (value: string) => Number(value),
+    },
+  })
   mapx: number;
 
-  @Column('decimal', { precision: 12, scale: 10 })
+  @Column('decimal', {
+    precision: 12,
+    scale: 10,
+    transformer: {
+      to: (value: string) => value,
+      from: (value: string) => Number(value),
+    },
+  })
   mapy: number;
 
   @Column('text', { nullable: true })

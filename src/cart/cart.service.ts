@@ -1,4 +1,9 @@
-import { ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cart } from './entities/cart.entity';
@@ -17,7 +22,9 @@ export class CartService {
   ) {}
 
   async addCart(placeId: string, userId: number): Promise<void> {
-    const place = await this.placeRepository.findOne({ where: { id: +placeId } });
+    const place = await this.placeRepository.findOne({
+      where: { id: +placeId },
+    });
     if (!place) {
       throw new NotFoundException('없는 장소 입니다.');
     }
@@ -27,7 +34,9 @@ export class CartService {
       throw new NotFoundException('없는 사용자 입니다.');
     }
 
-    const existingCartItem = await this.cartRepository.findOne({ where: { place: { id: +placeId }, user: { id: userId } } });
+    const existingCartItem = await this.cartRepository.findOne({
+      where: { place: { id: +placeId }, user: { id: userId } },
+    });
     if (existingCartItem) {
       throw new ConflictException('이미 찜한 장소입니다.');
     }
@@ -44,7 +53,9 @@ export class CartService {
   }
 
   async removeCart(placeId: string, userId: number) {
-    const cartItem = await this.cartRepository.findOne({ where: { place: { id: +placeId }, user: { id: userId } } });
+    const cartItem = await this.cartRepository.findOne({
+      where: { place: { id: +placeId }, user: { id: userId } },
+    });
     if (!cartItem) {
       throw new NotFoundException('이미 삭제한 목록입니다.');
     }
@@ -66,7 +77,7 @@ export class CartService {
       throw new NotFoundException('존재하지 않는 목록입니다.');
     }
 
-    return cartItems.map(cartItem => {
+    return cartItems.map((cartItem) => {
       const { cart_id, place } = cartItem;
 
       return {
@@ -77,9 +88,24 @@ export class CartService {
           image: place.image,
           title: place.title,
           event: place.event,
-          region: place.region
+          region: place.region,
         },
       };
     });
+  }
+
+  async getTotalSaveCount(placeId: number) {
+    return this.cartRepository
+      .createQueryBuilder('cart')
+      .where('cart.placeId = :id', { id: placeId })
+      .getCount();
+  }
+
+  async isSaved(userId: number, placeId: number) {
+    return this.cartRepository
+      .createQueryBuilder('cart')
+      .where('cart.userId = :userId', { userId })
+      .andWhere('cart.placeId = :placeId', { placeId })
+      .getCount();
   }
 }

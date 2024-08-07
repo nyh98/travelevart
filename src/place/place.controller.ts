@@ -42,7 +42,7 @@ export class PlaceController {
 
   @Get('/region')
   async getRegions() {
-    const result = this.placeService.getRegions();
+    const result = await this.placeService.getRegions();
     return { regions: result };
   }
 
@@ -51,14 +51,41 @@ export class PlaceController {
     @Param('id') placeId: number,
     @Query() pagination: PaginationDto,
   ) {
-    return this.placeService.getRating(placeId, pagination);
+    const [raws, totalCount] = await this.placeService.getRating(
+      placeId,
+      pagination,
+    );
+
+    const camelCase = raws.map((result) => {
+      return {
+        ...result,
+        user: {
+          id: result.user.id,
+          profileImg: result.user.profile_img,
+          userName: result.user.user_name,
+        },
+      };
+    });
+    return {
+      reviews: camelCase,
+      currentPage: pagination.page,
+      totalPage: Math.ceil(totalCount / pagination.limit),
+    };
   }
 
   @Get('/:id')
-  async getTravelDetial(@Param('id') placeId: string) {
-    const item = await this.placeService.getPlaceDetail(placeId);
+  async getTravelDetial(@Param('id') placeId: number, @Req() req: Request) {
+    const result = await this.placeService.getPlaceDetail(
+      placeId,
+      req.user ? req.user.id : null,
+    );
 
-    return { item };
+    return {
+      item: result.place,
+      averageRating: result.average,
+      totalSaveCount: result.totalSaveCount,
+      isSaved: result.isSaved,
+    };
   }
 
   @Post('/:id/rating')

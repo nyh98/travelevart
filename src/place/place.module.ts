@@ -9,6 +9,7 @@ import { PlaceRating } from './entities/placeRating.entity';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
 import { GptModule } from 'src/gpt/gpt.module';
+import { CartModule } from 'src/cart/cart.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GptModule } from 'src/gpt/gpt.module';
     HttpModule,
     AuthModule,
     GptModule,
+    CartModule,
   ],
   controllers: [PlaceController],
   providers: [PlaceService],
@@ -28,6 +30,7 @@ export class PlaceModule {
         { path: 'places/:id/rating', method: RequestMethod.POST },
         { path: 'places/:id/rating', method: RequestMethod.DELETE },
         { path: 'places/recommendations', method: RequestMethod.GET },
+        { path: 'places/:id', method: RequestMethod.GET },
       );
   }
 }

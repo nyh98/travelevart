@@ -28,9 +28,12 @@ export class PlaceRating {
   @Column()
   userId: number;
 
-  @Column('decimal', { precision: 2, scale: 1 })
+  @Column('tinyint')
   ratingValue: number;
 
   @Column('varchar', { length: 300 })
   review: string;
+
+  @Column('datetime', { name: 'created_at' })
+  createdAt: Date;
 }
