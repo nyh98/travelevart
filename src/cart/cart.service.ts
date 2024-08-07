@@ -17,7 +17,7 @@ export class CartService {
   ) {}
 
   async addCart(placeId: string, userId: number): Promise<void> {
-    const place = await this.placeRepository.findOne({ where: { placeId: +placeId } });
+    const place = await this.placeRepository.findOne({ where: { id: +placeId } });
     if (!place) {
       throw new NotFoundException('없는 장소 입니다.');
     }
@@ -27,7 +27,7 @@ export class CartService {
       throw new NotFoundException('없는 사용자 입니다.');
     }
 
-    const existingCartItem = await this.cartRepository.findOne({ where: { place: { placeId: +placeId }, user: { id: userId } } });
+    const existingCartItem = await this.cartRepository.findOne({ where: { place: { id: +placeId }, user: { id: userId } } });
     if (existingCartItem) {
       throw new ConflictException('이미 찜한 장소입니다.');
     }
@@ -44,7 +44,7 @@ export class CartService {
   }
 
   async removeCart(placeId: string, userId: number) {
-    const cartItem = await this.cartRepository.findOne({ where: { place: { placeId: +placeId }, user: { id: userId } } });
+    const cartItem = await this.cartRepository.findOne({ where: { place: { id: +placeId }, user: { id: userId } } });
     if (!cartItem) {
       throw new NotFoundException('이미 삭제한 목록입니다.');
     }
@@ -72,7 +72,7 @@ export class CartService {
       return {
         cart_id,
         place: {
-          placeId: place.placeId,
+          placeId: place.id,
           address: place.address,
           image: place.image,
           title: place.title,

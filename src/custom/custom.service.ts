@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Post } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TravelRoute } from './entities/travelroute.entity';
@@ -26,6 +26,7 @@ export class TravelRouteService {
     private regionRepository: Repository<Region>,
     @InjectRepository(Fork)
     private forkRepository: Repository<Fork>,
+    // @InjectRepository()
   ) {}
 
   async createTravelRoute(userId: number, createTravelRouteDto: CreateTravelRouteDto): Promise<TravelRoute> {
@@ -50,9 +51,9 @@ export class TravelRouteService {
     const detailTravels = [];
 
     for (const detail of details) {
-      const place = await this.placeRepository.findOne({ where: { placeId: detail.place_id } });
+      const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
       if (!place) {
-        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
+        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니당.`);
       }
 
       const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
@@ -78,7 +79,7 @@ export class TravelRouteService {
       detailTravels.push({
         id: detailTravel.id,
         travelroute_id: detailTravel.travelroute_id,
-        place_id: detailTravel.place.placeId,
+        place_id: detailTravel.place.id,
         region_id: detailTravel.region.id,
         count: detailTravel.count,
         date: detailTravel.date,

@@ -25,7 +25,7 @@ export class TravelRouteController {
     }
   }
 
-  @Patch(':travelRouteId')
+  @Post(':travelRouteId')
   async addDetailToTravelRoute(
     @Param('travelRouteId') travelRouteId: number,
     @Body() details: UpdateDetailTravelDto[],
