@@ -38,7 +38,7 @@ export class CartService {
       where: { place: { id: +placeId }, user: { id: userId } },
     });
     if (existingCartItem) {
-      throw new ConflictException('이미 찜한 장소입니다.');
+      throw new ConflictException('이미 찜한 장소입니당.');
     }
 
     const cartItem = new Cart();
