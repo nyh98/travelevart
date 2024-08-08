@@ -15,4 +15,4 @@ RUN npm install && npm cache clean --force
 COPY . .
 
 # 애플리케이션 실행
-CMD ["npm", "run", "build"]
+CMD ["npm", "run", "start"]
