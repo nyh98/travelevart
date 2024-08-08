@@ -45,7 +45,7 @@ export class PlaceService {
         'place.mapy AS mapy',
         'place.viewCount AS viewCount',
       ])
-      .addSelect('AVG(rating.ratingValue)', 'average')
+      .addSelect('AVG(rating.ratingValue)', 'averageRating')
       .addSelect('COUNT(rating.placeId)', 'reviewCount')
       .addSelect('COUNT(cart.placeId)', 'saveCount')
       .skip((searchOption.page - 1) * searchOption.limit)
@@ -95,7 +95,7 @@ export class PlaceService {
     //정렬 기준 디폴트값은 조회수순
     switch (searchOption.sort) {
       case 'rating':
-        query.orderBy('average', 'DESC');
+        query.orderBy('averageRating', 'DESC');
         break;
       case 'save':
         query.orderBy('saveCount', 'DESC');
@@ -121,7 +121,9 @@ export class PlaceService {
         viewCount: place.viewCount,
         reviewCount: place.reviewCount,
         saveCount: place.saveCount,
-        average: place.average ? Number(place.average).toFixed(1) : null,
+        averageRating: place.averageRating
+          ? Number(place.averageRating).toFixed(1)
+          : null,
       };
     });
 
