@@ -132,7 +132,7 @@ export class PostService implements OnModuleInit {
       };
     } catch (error) {
       console.error('Error :', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts (일반 게시물) 에러입니당. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`GET /posts (일반 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     };
   };
 
