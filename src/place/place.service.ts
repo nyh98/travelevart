@@ -313,6 +313,7 @@ export class PlaceService {
       .where('rating.placeId = :placeId', { placeId })
       .skip((pagination.page - 1) * pagination.limit)
       .take(pagination.limit)
+      .orderBy('rating.id', 'DESC')
       .getManyAndCount();
   }
 }
