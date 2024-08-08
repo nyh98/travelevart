@@ -8,7 +8,7 @@ import { RedisService } from './redis.service';
     {
       provide: 'REDIS_CLIENT',
       useFactory: () =>
-        new Redis(6379, 'localhost', {
+        new Redis(6379, 'project_redis_1', {
         // new Redis(6379, 'localhost', {
           retryStrategy: (time) => time + 30000000, //redis 재연결 시도 임시로 겁나 늘려놓았음
         }),
