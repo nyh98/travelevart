@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Req,
@@ -17,6 +16,7 @@ import {
   SearchPlaceDto,
 } from './dto/search-place.dto';
 import { Request } from 'express';
+import { Place } from './entities/place.entity';
 
 @Controller('places')
 export class PlaceController {
@@ -24,7 +24,7 @@ export class PlaceController {
 
   @Get('/search')
   async getPlace(@Query() search: SearchPlaceDto) {
-    const [items, totalCount] = await this.placeService.getPlaces(search);
+    const { items, totalCount } = await this.placeService.getPlaces(search);
 
     return {
       items,
@@ -67,6 +67,7 @@ export class PlaceController {
       };
     });
     return {
+      totalReviews: totalCount,
       reviews: camelCase,
       currentPage: pagination.page,
       totalPage: Math.ceil(totalCount / pagination.limit),

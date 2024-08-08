@@ -8,6 +8,8 @@ import {
   Length,
 } from 'class-validator';
 
+type Sort = 'review' | 'rating' | 'view' | 'save';
+
 export class PaginationDto {
   @Type(() => Number)
   @IsNumber({}, { message: 'page는 숫자여야 합니다' })
@@ -27,6 +29,8 @@ export class SearchPlaceDto extends PaginationDto {
   district: string;
 
   name: string;
+
+  sort: Sort;
 }
 
 export class RecommendationsDto {
