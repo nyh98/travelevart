@@ -15,6 +15,7 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
 import { TravelRouteModule } from './custom/custom.module';
 import { GptModule } from './gpt/gpt.module';
+import { EventModule } from './event/event.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { GptModule } from './gpt/gpt.module';
     ScheduleModule,
     S3Module,
     GptModule,
+    EventModule,
   ],
   controllers: [],
   providers: [],

@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
 import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
-import { TourAPI, TourAPIDetail } from 'src/types/tourAPI';
 import {
   PaginationDto,
   RecommendationsDto,
@@ -33,34 +32,103 @@ export class PlaceService {
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
-    const where: {
-      regionId?: number;
-      title?: FindOperator<string>;
-      address?: FindOperator<string>;
-    } = {};
+    const query = this.placeRepository
+      .createQueryBuilder('place')
+      .leftJoin('place.rating', 'rating')
+      .leftJoin('place.carts', 'cart')
+      .select([
+        'place.id',
+        'place.address AS address',
+        'place.image AS image',
+        'place.title AS title',
+        'place.mapx AS mapx',
+        'place.mapy AS mapy',
+        'place.viewCount AS viewCount',
+      ])
+      .addSelect('AVG(rating.ratingValue)', 'average')
+      .addSelect('COUNT(rating.placeId)', 'reviewCount')
+      .addSelect('COUNT(cart.placeId)', 'saveCount')
+      .skip((searchOption.page - 1) * searchOption.limit)
+      .take(searchOption.limit)
+      .groupBy('place.id');
 
+    //지역 코드가 있을시
     if (searchOption.regionCode) {
-      where.regionId = searchOption.regionCode;
+      query.where('place.regionId = :regionId', {
+        regionId: searchOption.regionCode,
+      });
+
+      if (searchOption.district) {
+        query.andWhere('place.address LIKE :district', {
+          district: `%${searchOption.district}%`,
+        });
+      }
+
+      if (searchOption.name) {
+        query.andWhere('place.title LIKE :name', {
+          name: `%${searchOption.name}%`,
+        });
+      }
     }
 
-    if (searchOption.district) {
-      where.address = Like(`%${searchOption.district}%`);
+    //지역 코드가 없고 하위 검색어가 있을때
+    if (!searchOption.regionCode && searchOption.district) {
+      query.where('place.address LIKE :district', {
+        district: `%${searchOption.district}%`,
+      });
+      if (searchOption.name) {
+        query.andWhere('place.title LIKE :name', {
+          name: `%${searchOption.name}%`,
+        });
+      }
     }
 
-    if (searchOption.name) {
-      where.title = Like(`%${searchOption.name}%`);
+    //지역 코드, 지역 하위 검색어가 없고 여행지 이름 검색어가 있을때
+    if (
+      !searchOption.regionCode &&
+      !searchOption.district &&
+      searchOption.name
+    ) {
+      query.where('place.title LIKE :name', { name: `%${searchOption.name}%` });
     }
 
-    return this.placeRepository.findAndCount({
-      select: ['id', 'address', 'image', 'title', 'mapx', 'mapy'],
-      where: where,
-      skip: (searchOption.page - 1) * searchOption.limit,
-      take: searchOption.limit,
+    //정렬 기준 디폴트값은 조회수순
+    switch (searchOption.sort) {
+      case 'rating':
+        query.orderBy('average', 'DESC');
+        break;
+      case 'save':
+        query.orderBy('saveCount', 'DESC');
+        break;
+      case 'review':
+        query.orderBy('reviewCount', 'DESC');
+        break;
+      default:
+        query.orderBy('viewCount', 'DESC');
+    }
+
+    const result = await query.getRawAndEntities();
+    const totalCount = await query.getCount();
+
+    const items = result.raw.map((place) => {
+      return {
+        id: place.place_id,
+        address: place.address,
+        image: place.image,
+        title: place.title,
+        mapx: place.mapx,
+        mapy: place.mapy,
+        viewCount: place.viewCount,
+        reviewCount: place.reviewCount,
+        saveCount: place.saveCount,
+        average: place.average ? Number(place.average).toFixed(1) : null,
+      };
     });
+
+    return { items, totalCount };
   }
 
   async getPlaceDetail(placeId: number, userId?: number) {
-    console.log(userId);
     if (isNaN(placeId)) {
       throw new BadRequestException('id는 숫자여야 합니다');
     }
@@ -96,7 +164,7 @@ export class PlaceService {
     let isSaved: boolean;
     if (userId) {
       const result = await this.cartService.isSaved(userId, placeId);
-      console.log(result);
+
       isSaved = Boolean(result);
     } else {
       isSaved = false;
