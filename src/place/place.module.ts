@@ -10,6 +10,7 @@ import { authMiddleware } from 'src/auth/auth.middleware';
 import { AuthModule } from 'src/auth/auth.module';
 import { GptModule } from 'src/gpt/gpt.module';
 import { CartModule } from 'src/cart/cart.module';
+import { authOptionMiddleware } from 'src/auth/auth-option.middleware';
 
 @Module({
   imports: [
@@ -30,7 +31,10 @@ export class PlaceModule {
         { path: 'places/:id/rating', method: RequestMethod.POST },
         { path: 'places/:id/rating', method: RequestMethod.DELETE },
         { path: 'places/recommendations', method: RequestMethod.GET },
-        { path: 'places/:id', method: RequestMethod.GET },
       );
+
+    middleware
+      .apply(authOptionMiddleware)
+      .forRoutes({ path: 'places/:id', method: RequestMethod.GET });
   }
 }
