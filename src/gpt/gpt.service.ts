@@ -1,20 +1,13 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { Place } from 'src/place/entities/place.entity';
 
 @Injectable()
-export class GptService implements OnModuleInit {
+export class GptService {
   private gptClient: OpenAI;
 
-  constructor(private configService: ConfigService) {}
-
-  onModuleInit() {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
-    if (!apiKey) {
-      throw new Error('The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: \'My API Key\' }).');
-    }
-    this.gptClient = new OpenAI({ apiKey });
+  constructor() {
+    this.gptClient = new OpenAI();
   }
 
   async recommendations(
