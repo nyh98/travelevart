@@ -10,9 +10,10 @@ import { AuthModule } from 'src/auth/auth.module';
 import { Comment } from 'src/comment/entities/comment.entity'
 import { RedisModule } from 'src/redis/redis.module';
 import { Postcontent } from './entities/postcontent.entity';
+import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment, Postcontent]), AuthModule, RedisModule],
+  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment, Postcontent, TravelRoute]), AuthModule, RedisModule],
   controllers: [PostController],
   providers: [PostService],
   exports: [PostService],
