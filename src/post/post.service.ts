@@ -63,25 +63,20 @@ export class PostService implements OnModuleInit {
       .leftJoin('post.user', 'user')
       .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
       .leftJoin('post.postlike', 'postlike') // 좋아요 수를 계산하기 위한 조인
-      .leftJoin('post.travelRoute', 'travelRoute')
-      .leftJoinAndSelect('travelRoute.detailTravels', 'detailTravel')
       .leftJoinAndSelect('post.postContents', 'postContents') // 게시물 내용 조인
       .addSelect('user.id')
       .addSelect('user.user_name') // 필요한 유저 정보만 선택
       .addSelect('user.profile_img')
-      .addSelect('detailTravel.count AS travelOrder')
       .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
       .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
       .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
-      .addGroupBy('detailTravel.id')
-      .orderBy('detailTravel.count', 'ASC')
+      .orderBy('postContents', 'ASC')
 
     if (userId) {
       qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
         .setParameter('userId', userId);
     }
-
 
     if (target === '여행게시판') {
       qb.andWhere('post.travelRoute_id IS NOT NULL');
@@ -103,8 +98,7 @@ export class PostService implements OnModuleInit {
       const result = await qb.getRawAndEntities();
       const rawPosts = result.raw;
       const posts = result.entities;
-
-
+      
       let totalPage = Math.ceil(totalPosts / pageSizeNumber);
       if (totalPage === 0) {
         totalPage = 1;
