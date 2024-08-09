@@ -289,7 +289,13 @@ export class PlaceService {
   }
 
   async getRegions() {
-    return this.regionRepository.find();
+    const result = await this.regionRepository.find();
+
+    const zero = [{ id: 0, region: '전체' }];
+
+    const regions = zero.concat(result);
+
+    return regions;
   }
 
   async getRating(placeId: number, pagination: PaginationDto) {
