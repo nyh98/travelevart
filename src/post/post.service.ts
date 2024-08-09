@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable, OnModuleInit } from '@nestjs/common';
+import { ConsoleLogger, HttpException, HttpStatus, Injectable, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../user/entities/user.entity';
 import { DataSource, IsNull, Like, Not, Repository } from 'typeorm';
@@ -8,6 +8,7 @@ import { Post } from './entities/post.entity';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { RedisService } from 'src/redis/redis.service';
 import { Postcontent } from './entities/postcontent.entity';
+import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 
 @Injectable()
 export class PostService implements OnModuleInit {
@@ -24,6 +25,8 @@ export class PostService implements OnModuleInit {
     private readonly commentRepository: Repository<Comment>,
     @InjectRepository(Postcontent)
     private readonly postcontentRepository: Repository<Postcontent>,
+    @InjectRepository(TravelRoute)
+    private readonly travelRouteRepository: Repository<TravelRoute>,
   ) {}
 
   async onModuleInit() {
@@ -60,14 +63,19 @@ export class PostService implements OnModuleInit {
       .leftJoin('post.user', 'user')
       .leftJoin('post.comment', 'comment') // 댓글 수를 계산하기 위한 조인
       .leftJoin('post.postlike', 'postlike') // 좋아요 수를 계산하기 위한 조인
+      .leftJoin('post.travelRoute', 'travelRoute')
+      .leftJoinAndSelect('travelRoute.detailTravels', 'detailTravel')
       .leftJoinAndSelect('post.postContents', 'postContents') // 게시물 내용 조인
       .addSelect('user.id')
       .addSelect('user.user_name') // 필요한 유저 정보만 선택
       .addSelect('user.profile_img')
+      .addSelect('detailTravel.count AS travelOrder')
       .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
       .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
-      .addGroupBy('postContents.id'); // 그룹화를 postContents.id로 추가
+      .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
+      .addGroupBy('detailTravel.id')
+      .orderBy('detailTravel.count', 'ASC')
 
     if (userId) {
       qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
@@ -102,31 +110,48 @@ export class PostService implements OnModuleInit {
         totalPage = 1;
       }
 
-      // 게시물 상세 정보 구성
-      const postDetail = posts.map((post, index) => ({
-        id: post.id,
-        author: post.user.user_name,
-        authorId: post.user.id,
-        profileImg: post.user.profile_img,
-        title: post.title,
-        views: post.view_count,
-        commentCount: parseInt(rawPosts[index].commentCount, 10) || 0,
-        created_at: post.created_at,
-        travelRoute_id: post.travelRoute_id,
-        like: parseInt(rawPosts[index].likeCount, 10) || 0,
-        contents: post.postContents.map(content => ({
+      // TravelRoute 및 DetailTravels 데이터를 개별적으로 가져오기
+      const postDetailPromises = posts.map(async (post, index) => {
+        let detailTravels = [];
+
+        if (post.travelRoute_id) {
+          const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
+            .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
+            .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
+            .orderBy('detailtravel.count', 'ASC')
+            .getOne();
+
+          detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
+            image: travel.detailtravel_image,
+          })) : [];
+        }
+
+        return {
+          id: post.id,
+          author: post.user.user_name,
+          authorId: post.user.id,
+          profileImg: post.user.profile_img,
+          title: post.title,
+          views: post.view_count,
+          commentCount: parseInt(rawPosts[index].commentCount, 10) || 0,
+          created_at: post.created_at,
+          travelRoute_id: post.travelRoute_id,
+          like: parseInt(rawPosts[index].likeCount, 10) || 0,
+          detailTravels: detailTravels,
+          contents: post.postContents.map(content => ({
             id: content.id,
             postId: content.post_id,
             order: content.order,
             text: content.contents,
             image: content.contents_img
-        })),
-        isLiked: rawPosts[index].isLiked == 1
-      }));
-
+          })),
+          isLiked: rawPosts[index].isLiked == 1
+        };
+      });
+      const postDetails = await Promise.all(postDetailPromises);
       // 응답 데이터 구조화
       return {
-        posts: postDetail,
+        posts: postDetails,
         currentPage: pageNumber,
         totalPage: totalPage,
       };
@@ -222,7 +247,7 @@ export class PostService implements OnModuleInit {
   }
 
   // 게시물 상세 조회
-  async getDetailPost(id: number, userId:number | null): Promise<PostDetailDto> {
+  async getDetailPost(id: number, userId: number | null): Promise<PostDetailDto> {
     try {
       // 조회수를 1 증가시키는 쿼리 실행
       await this.postRepository.increment({ id }, 'view_count', 1);
@@ -238,32 +263,45 @@ export class PostService implements OnModuleInit {
         .addSelect('user.profile_img')
         .addSelect('COUNT(DISTINCT comment.id) AS commentCount')
         .addSelect('COUNT(DISTINCT postlike.id) AS likeCount')
-        .groupBy('post.id')
+        .addGroupBy('post.id')
+        .addGroupBy('user.id')
         .addGroupBy('postContents.id')
-
-
+        .orderBy('postContents.order', 'ASC');
+  
       if (userId) {
         qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
           .setParameter('userId', userId);
       }
-
-      const post = await qb.getRawAndEntities();
-      const rawPost = post.raw[0];
-      const entityPost = post.entities[0];
+  
+      const result = await qb.getRawAndEntities();
+  
+      const rawPost = result.raw[0];
+      const entityPost = result.entities[0];
   
       if (!rawPost || !entityPost) {
         throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
       }
+  
+      const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
+        .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
+        .where('travelroute.id = :travelRouteId', { travelRouteId: entityPost.travelRoute_id })
+        .orderBy('detailtravel.count', 'ASC')
+        .getOne();
+
+  
       return {
         id: entityPost.id,
         author: entityPost.user.user_name,
         authorId: entityPost.user.id,
         profileImg: entityPost.user.profile_img,
         title: entityPost.title,
-        views: entityPost.view_count, // 이미 증가된 조회수를 반영
+        views: entityPost.view_count,
         commentCount: parseInt(rawPost.commentCount, 10) || 0,
         created_at: entityPost.created_at,
         travelRoute_id: entityPost.travelRoute_id || 0,
+        detailTravels: travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
+          image: travel.detailtravel_image,
+        })) : [],
         contents: entityPost.postContents ? entityPost.postContents.map(content => ({
           id: content.id,
           postId: content.post_id,

@@ -71,6 +71,7 @@ export interface PostDetailDto {
     created_at: Date;
     travelRoute_id: number;
     like: number;
+    detailTravels: DetailTravelDto[];
     contents?: PostContentDto[];
     isLiked?: boolean;
 }
@@ -82,4 +83,8 @@ export interface PopularPostDetailDto {
     profileImg: string
     title: string;
     contents?: PostContentDto[];
+}
+
+export interface DetailTravelDto {
+    image: string;
 }
