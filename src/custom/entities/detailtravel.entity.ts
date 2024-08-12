@@ -1,6 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
-import internal from 'stream';
 import { TravelRoute } from './travelroute.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
@@ -12,12 +18,12 @@ export class DetailTravel {
 
   @Column()
   travelroute_id: number;
-  
+
   @Column()
   place_id: number;
-  
+
   @Column()
-  count: number;
+  routeIndex: number;  // 기존 count 컬럼 대체
 
   @Column()
   region_id: number;
@@ -26,19 +32,46 @@ export class DetailTravel {
   date: Date;
 
   @Column()
-  time: string;
+  playTime: string;  // 기존 time 컬럼 대체
 
-  @Column()
+  @Column({ nullable: true })
   contents: string;
 
   @Column()
-  traffic_info: string;
+  transportOption: string;  // 기존 traffic_info 컬럼 대체
 
-  @Column()
+  @Column({ nullable: true })
   starting_point: string;
 
   @Column()
   detailtravel_image: string;
+
+  @Column()
+  address: string;  // 새로운 컬럼 추가
+
+  @Column()
+  placeTitle: string;  // 새로운 컬럼 추가
+
+  @Column()
+  placeImage: string;  // 새로운 컬럼 추가
+
+  @Column()
+  day: number;  // 새로운 컬럼 추가
+
+  @Column({ nullable: true })
+  mapLink: string;  // 새로운 컬럼 추가
+
+  @Column({ nullable: true })
+  accommodation_day: number;  // 새로운 숙소 관련 컬럼 추가
+
+  @Column({ nullable: true })
+  accommodation_address: string;  // 새로운 숙소 관련 컬럼 추가
+
+  @Column({ nullable: true })
+  accommodation_title: string;  // 새로운 숙소 관련 컬럼 추가
+
+  @Column({ nullable: true })
+  accommodation_reservationLink: string;  // 새로운 숙소 관련 컬럼 추가
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels)
   @JoinColumn({ name: 'travelroute_id' })
@@ -52,6 +85,6 @@ export class DetailTravel {
   @JoinColumn({ name: 'region_id' })
   region: Region;
 
-  @OneToMany(() => Diary, diary => diary.detailTravel)
+  @OneToMany(() => Diary, (diary) => diary.detailTravel)
   diaries: Diary[];
 }
