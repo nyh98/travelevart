@@ -75,7 +75,7 @@ export class CartService {
     });
 
     if (!cartItems.length) {
-      throw new NotFoundException('존재하지 않는 목록입니다.');
+      return [];
     }
 
     return cartItems.map((cartItem) => {
