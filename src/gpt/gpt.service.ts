@@ -21,20 +21,21 @@ export class GptService {
   ) {
     const jsonFormat = `{
       transportOption : car | publicTransport ,
-      detailRoute: {
-        address: string;
-        placeTitle : string
-        routeIndex : number;
-        placeImage : string;
-        mapx : number
-        mapy : number
-        day : number
+      routes: {
         date : 'xxxx-xx-xx'
-        distance: '약 10Km';
-        estimatedTime: '약 10분';
-        playTime : '2시간'
-        mapLink : "http://map.naver.com/index.nhn?slng=&slat=&stext=&elng=&elat=&etext=&menu=route&pathType=1"
-      }[],
+        detail : { address: string;
+                  placeTitle : string
+                  routeIndex : number;
+                  placeImage : string;
+                  mapx : number
+                  mapy : number
+                  day : number 
+                  distance: '약 10Km';
+                  estimatedTime: '약 10분';
+                  playTime : '2시간'
+                  mapLink : "http://map.naver.com/index.nhn?slng=&slat=&stext=&elng=&elat=&etext=&menu=route&pathType=1"
+                  }[]
+      }[]
       accommodation: { 
         day : number
         address: string;
@@ -56,7 +57,7 @@ export class GptService {
           role: 'user',
           content: `${travleRawsJson} 해당 여행지들 중에서 여행지 추천해줘 ${age ? `${age}대들이` : ''} ${people ? `${people}명이서` : ''} ${sdate} 부터 ${edate} 까지 
           ${transportation}로 여행을 갈건데 ${concept ? `여행 컨셉은 ${concept}이고` : ''} 서로 거리가 가까운 순으로 추천해주고.
-          day는 날짜별로 정해줘. 날마다 최소 한곳은 가게해서 무조건 ${sdate} 부터 ${edate} 까지 일정을 다 채울것. 지역이 여러개 있으면 지역마다 들릴것.
+          day는 날짜별로 정해줘. routeIndex는 day별로 1부터 시작할것. 날마다 최소 한곳은 가게해서 무조건 ${sdate} 부터 ${edate} 까지 일정을 다 채울것. 지역이 여러개 있으면 지역마다 들릴것.
            mapLink는 이전 장소랑 다음에 갈 장소인데 출발점 위도,경도,이름, 도착지 위도 경도, 이름 잘 입력해줘 그리고 URL에서 띄어쓰기는+로 채워. 그날의 마지막 목적지는 mapLink, distance, estimatedTime는 null로 해.`,
         },
       ],
