@@ -67,6 +67,7 @@ export class CartService {
     }
   }
 
+  // 조회할때 없으면 에러가 아니라 빈 배열이 나오게끔
   async getAllCartItems(userId: number): Promise<any[]> {
     const cartItems = await this.cartRepository.find({
       where: { user: { id: userId } },

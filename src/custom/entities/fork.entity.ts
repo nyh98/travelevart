@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
 import { Post } from '../../post/entities/post.entity';
+import { TravelRoute } from './travelroute.entity';
 
 @Entity('fork')
 export class Fork {
@@ -23,4 +24,5 @@ export class Fork {
   @ManyToOne(() => Post, post => post.forks)
   @JoinColumn({ name: 'post_id' })
   post: Post;
+
 }

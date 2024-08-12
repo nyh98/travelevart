@@ -47,204 +47,281 @@ export class TravelRouteService {
   async addDetailToTravelRoute(travelRouteId: number, details: UpdateDetailTravelDto[]): Promise<DetailTravel[]> {
     const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelRouteId } });
     if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+        throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
     }
 
-    const detailTravels = [];
+    const detailTravels: DetailTravel[] = [];
 
     for (const detail of details) {
-      const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
-      if (!place) {
-        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니당.`);
-      }
+        const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
+        if (!place) {
+            throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
+        }
 
-      const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
-      if (!region) {
-        throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
-      }
+        const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
+        if (!region) {
+            throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
+        }
 
-      const detailTravel = this.detailTravelRepository.create({
-        travelRoute: travelRoute,
-        place: place,
-        region: region,
-        count: detail.count,
-        date: detail.date,
-        time: detail.time,
-        contents: detail.contents,
-        traffic_info: detail.traffic_info,
-        starting_point: detail.starting_point,
-        detailtravel_image: detail.detailtravel_image,
-      });
+        const detailTravel = this.detailTravelRepository.create({
+            ...detail, // 각각의 detail 요소를 사용
+            travelRoute: { id: travelRouteId },
+            place: { id: detail.place_id }, // 관계 설정
+            region: { id: detail.region_id } // 관계 설정
+        });
 
-      await this.detailTravelRepository.save(detailTravel);
+        await this.detailTravelRepository.save(detailTravel);
 
-      detailTravels.push({
-        id: detailTravel.id,
-        travelroute_id: detailTravel.travelroute_id,
-        place_id: detailTravel.place.id,
-        region_id: detailTravel.region.id,
-        count: detailTravel.count,
-        date: detailTravel.date,
-        contents: detailTravel.contents,
-        traffic_info: detailTravel.traffic_info,
-        starting_point: detailTravel.starting_point,
-        detailtravel_image: detailTravel.detailtravel_image,
-        time: detailTravel.time,
-      });
+        detailTravels.push(detailTravel); // 저장한 detailTravel을 배열에 추가
     }
 
     return detailTravels;
-  }
-
-  async forkPost(userId: number, postId: number): Promise<Fork> {
-    const post = await this.postRepository.findOne({ where: { id: postId }, relations: ['travelRoute'] });
-    if (!post) {
-      throw new NotFoundException('게시글을 찾을 수 없습니다.');
-    }
-
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    const existingFork = await this.forkRepository.findOne({ where: { user: { id: userId }, post: { id: postId } } });
-    if (existingFork) {
-      throw new ConflictException('이미 포크한 게시글입니다.');
-    }
-
-    const travelRoute = post.travelRoute;
-    if (!travelRoute) {
+}
+ // TravelRoute 수정
+ async updateTravelRoute(travelrouteId: number, updateTravelRouteDto: { travel_name?: string, travelroute_range?: number }): Promise<any> {
+  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+  if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
-    }
-
-    const fork = this.forkRepository.create({ 
-      user_id: userId, 
-      post_id: postId,
-      forked_at: new Date(), 
-    });
-
-    await this.forkRepository.save(fork);
-
-    const newTravelRoute = this.travelRouteRepository.create({
-      user_id: userId,
-      travel_name: travelRoute.travel_name,
-      travelroute_range: travelRoute.travelroute_range,
-    });
-  
-    const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
-  
-    return fork;
   }
-  // 포크한 게시글을 기준으로 커스텀
-  async forkTravelRoute(userId: number, forkId: number, details: UpdateDetailTravelDto[]): Promise<any[]> {
-    const fork = await this.forkRepository.findOne({
-      where: { id: forkId },
-      relations: ['post'],
-    });
 
-    if (!fork) {
-      throw new NotFoundException('포크 정보를 찾을 수 없습니다.');
-    }
+  travelRoute.travel_name = updateTravelRouteDto.travel_name || travelRoute.travel_name;
+  travelRoute.travelroute_range = updateTravelRouteDto.travelroute_range || travelRoute.travelroute_range;
 
-    const post = await this.postRepository.findOne({ where: { id: fork.post_id }, relations: ['travelRoute'] });
-    if (!post) {
-      throw new NotFoundException('포크한 게시물을 찾을 수 없습니다.');
-    }
+  return this.travelRouteRepository.save(travelRoute);
+}
 
-    const travelRouteId = post.travelRoute.id;
-    const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelRouteId } });
-    if (!travelRoute) {
+// DetailTravel 수정
+async updateDetailTravel(travelrouteId: number, detailtravelId: number, detail: UpdateDetailTravelDto): Promise<any> {
+  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+  if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
-    }
-  
-    const detailTravels = [];
-  
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    for (const detail of details) {
-      const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
-      if (!place) {
-        throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
-      }
-  
-      const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
-      if (!region) {
-        throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
-      }
-  
-      const detailTravel = this.detailTravelRepository.create({
-        travelRoute,
-        place,
-        region,
-        count: detail.count,
-        date: detail.date,
-        time: detail.time,
-        contents: detail.contents,
-        traffic_info: detail.traffic_info,
-        starting_point: detail.starting_point,
-        detailtravel_image: detail.detailtravel_image,
-      });
-  
-      await this.detailTravelRepository.save(detailTravel);
-  
-      detailTravels.push({
-        id: detailTravel.id,
-        place_id: detailTravel.place.id,
-        region_id: detailTravel.region.id,
-        count: detailTravel.count,
-        date: detailTravel.date,
-        contents: detailTravel.contents,
-        traffic_info: detailTravel.traffic_info,
-        starting_point: detailTravel.starting_point,
-        detailtravel_image: detailTravel.detailtravel_image,
-        time: detailTravel.time,
-      });
-    }
-
-    return detailTravels;
   }
+
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
+  if (!detailTravel) {
+      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+  }
+
+  detailTravel.routeIndex = detail.routeIndex || detailTravel.routeIndex;
+  detailTravel.date = detail.date ? new Date(detail.date) : detailTravel.date;
+  detailTravel.playTime = detail.playTime || detailTravel.playTime;
+  detailTravel.contents = detail.contents || detailTravel.contents;
+  detailTravel.transportOption = detail.transportOption || detailTravel.transportOption;
+  detailTravel.starting_point = detail.starting_point || detailTravel.starting_point;
+  detailTravel.detailtravel_image = detail.detailtravel_image || detailTravel.detailtravel_image;
+  detailTravel.address = detail.address || detailTravel.address;
+  detailTravel.placeTitle = detail.placeTitle || detailTravel.placeTitle;
+  detailTravel.placeImage = detail.placeImage || detailTravel.placeImage;
+  detailTravel.day = detail.day || detailTravel.day;
+  detailTravel.mapLink = detail.mapLink || detailTravel.mapLink;
+  detailTravel.accommodation_day = detail.accommodation_day || detailTravel.accommodation_day;
+  detailTravel.accommodation_address = detail.accommodation_address || detailTravel.accommodation_address;
+  detailTravel.accommodation_title = detail.accommodation_title || detailTravel.accommodation_title;
+  detailTravel.accommodation_reservationLink = detail.accommodation_reservationLink || detailTravel.accommodation_reservationLink;
+
+  return this.detailTravelRepository.save(detailTravel);
+}
+
+// TravelRoute 조회
+async getTravelRoute(travelrouteId: number): Promise<any> {
+  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId }});
+  if (!travelRoute) {
+      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+  }
+  return travelRoute;
+}
+
+// DetailTravel 조회
+async getDetailTravel(travelrouteId: number, detailtravelId: number): Promise<any> {
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
+  if (!detailTravel) {
+      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+  }
+  return detailTravel;
+}
+
+// TravelRoute 삭제
+async deleteTravelRoute(travelrouteId: number): Promise<void> {
+  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+  if (!travelRoute) {
+      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+  }
+  await this.travelRouteRepository.remove(travelRoute);
+  await this.detailTravelRepository.delete({ travelRoute: {id: travelrouteId }});
+  
+}
+
+// DetailTravel 삭제
+async deleteDetailTravel(travelrouteId: number, detailtravelId: number): Promise<void> {
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
+  if (!detailTravel) {
+      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+  }
+  await this.detailTravelRepository.remove(detailTravel);
+}
+
+async forkPost(userId: number, postId: number): Promise<Fork> {
+  const post = await this.postRepository.findOne({ where: { id: postId }, relations: ['travelRoute'] });
+  if (!post) {
+    throw new NotFoundException('게시글을 찾을 수 없습니다.');
+  }
+
+  const user = await this.userRepository.findOne({ where: { id: userId } });
+  if (!user) {
+    throw new NotFoundException('사용자를 찾을 수 없습니다.');
+  }
+
+  const existingFork = await this.forkRepository.findOne({ where: { user: { id: userId }, post: { id: postId } } });
+  if (existingFork) {
+    throw new ConflictException('이미 포크한 게시글입니다.');
+  }
+
+  const travelRoute = post.travelRoute;
+  if (!travelRoute) {
+    throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+  }
+
+  // 포크 데이터 생성
+  const fork = this.forkRepository.create({ 
+    user_id: userId, 
+    post_id: postId,
+    forked_at: new Date(), 
+  });
+
+  await this.forkRepository.save(fork);
+
+  // 새로운 TravelRoute 데이터 생성
+  const newTravelRoute = this.travelRouteRepository.create({
+    user_id: userId,
+    travel_name: travelRoute.travel_name,
+    travelroute_range: travelRoute.travelroute_range,
+  });
+
+  const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
+
+  // 원래 travelRoute에 연결된 detailtravel 데이터 가져오기
+  const detailTravels = await this.detailTravelRepository.find({ where: { travelroute_id: travelRoute.id } });
+
+  // 새 travelRoute에 맞게 detailtravel 데이터 복제
+  for (const detailTravel of detailTravels) {
+    const newDetailTravel = this.detailTravelRepository.create({
+      travelroute_id: savedTravelRoute.id,  // 새로운 travelroute_id
+      place_id: detailTravel.place_id,
+      routeIndex: detailTravel.routeIndex,  // 'count'를 'routeIndex'로 수정
+      region_id: detailTravel.region_id,
+      date: detailTravel.date,
+      playTime: detailTravel.playTime,  // 'time'을 'playTime'으로 수정
+      contents: detailTravel.contents,
+      transportOption: detailTravel.transportOption,  // 'traffic_info'를 'transportOption'으로 수정
+      starting_point: detailTravel.starting_point,
+      detailtravel_image: detailTravel.detailtravel_image,
+      address: detailTravel.address,
+      placeTitle: detailTravel.placeTitle,
+      placeImage: detailTravel.placeImage,
+      day: detailTravel.day,
+      mapLink: detailTravel.mapLink,
+      accommodation_day: detailTravel.accommodation_day,
+      accommodation_address: detailTravel.accommodation_address,
+      accommodation_title: detailTravel.accommodation_title,
+      accommodation_reservationLink: detailTravel.accommodation_reservationLink,
+    });
+
+      await this.detailTravelRepository.save(newDetailTravel);
+  }
+
+  return fork;
+}
 
   // 추천 경로를 기준으로 커스텀
-  async recommendTravelRoute(userId: number, recommendationId: number, createTravelRouteDto: CreateTravelRouteDto): Promise<TravelRoute> {
-    const recommendedRoute = await this.travelRouteRepository.findOne({
-      where: { id: recommendationId },
-      relations: ['detailTravels'],
-    });
-
-    if (!recommendedRoute) {
-      throw new NotFoundException('추천 여행 경로를 찾을 수 없습니다.');
-    }
-
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    const newTravelRoute = this.travelRouteRepository.create({
-      ...createTravelRouteDto,
-      user,
-    });
-
-    const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
-
-    for (const detail of recommendedRoute.detailTravels) {
-      const newDetailTravel = this.detailTravelRepository.create({
-        travelRoute: savedTravelRoute,
-        place: detail.place,
-        region: detail.region,
-        count: detail.count,
-        date: detail.date,
-        time: detail.time,
-        contents: detail.contents,
-        traffic_info: detail.traffic_info,
-        starting_point: detail.starting_point,
+  async saveRecommendedRoute(
+    createTravelRouteDto: CreateTravelRouteDto,
+    userId: number,
+  ): Promise<any> {
+    try {
+      const { travel_name, travelroute_range, transportOption, detailRoute, accommodation } = createTravelRouteDto;
+  
+      // 새로운 TravelRoute 생성
+      const newTravelRoute = this.travelRouteRepository.create({
+        user_id: userId,
+        travel_name,
+        travelroute_range,
       });
-      await this.detailTravelRepository.save(newDetailTravel);
+  
+      // TravelRoute 저장
+      const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
+      
+      // DetailTravel 데이터 저장
+      const detailTravelEntities = await Promise.all(detailRoute.map(async detail => {
+        try {
+          const place = await this.placeRepository.findOne({
+            where: {
+              address: detail.address,
+              title: detail.placeTitle,
+            },
+          });
+          
+          if (!place) {
+            throw new NotFoundException(`Place not found for address: ${detail.address}, title: ${detail.placeTitle}`);
+          }
+  
+          const detailTravel = this.detailTravelRepository.create({
+            travelroute_id: savedTravelRoute.id,
+            place_id: place.id,
+            routeIndex: detail.routeIndex,
+            region_id: place.regionId,
+            date: new Date(detail.date),
+            playTime: detail.playTime,
+            contents: null,
+            transportOption: transportOption,
+            starting_point: null,
+            detailtravel_image: detail.placeImage,
+            address: detail.address,
+            placeTitle: detail.placeTitle,
+            placeImage: detail.placeImage,
+            day: detail.day,
+            mapLink: detail.mapLink,
+            accommodation_day: null,
+            accommodation_address: null,
+            accommodation_title: null,
+            accommodation_reservationLink: null,
+          });
+  
+          return detailTravel;
+        } catch (error) {
+          console.error('Error while creating DetailTravel:', error);
+          throw error;  // 다시 던져서 외부에서 처리할 수 있게 함
+        }
+      }));
+  
+      // 저장 후, 숙소 정보 처리
+      const savedDetailTravels = await this.detailTravelRepository.save(detailTravelEntities);
+  
+      // 숙소 정보를 DetailTravel의 적절한 엔트리에 저장
+      if (accommodation) {
+        for (const acc of accommodation) {
+          try {
+            const detailTravel = savedDetailTravels.find(dt => dt.day === acc.day);
+            if (detailTravel) {
+              detailTravel.accommodation_day = acc.day;
+              detailTravel.accommodation_address = acc.address;
+              detailTravel.accommodation_title = acc.title;
+              detailTravel.accommodation_reservationLink = acc.reservationLink;
+  
+              await this.detailTravelRepository.save(detailTravel);
+            }
+          } catch (error) {
+            console.error('Error while updating accommodation details:', error);
+            throw error;
+          }
+        }
+      }
+  
+      return savedTravelRoute;
+    } catch (error) {
+      console.error('Error in saveRecommendedRoute:', error);
+      throw error;  // 최종적으로 외부에서 처리
     }
-
-    return savedTravelRoute;
   }
+
+
 }
