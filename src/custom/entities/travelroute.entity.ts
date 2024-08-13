@@ -22,6 +22,12 @@ export class TravelRoute {
   })
   travelroute_range: number;
 
+  @Column({type: 'date'})
+  start_date: Date;
+  
+  @Column({type: 'date'})
+  end_date: Date;
+
   @ManyToOne(() => User, (user) => user.travelRoutes)
   @JoinColumn({ name: 'user_id' })
   user: User;

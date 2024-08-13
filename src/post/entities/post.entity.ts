@@ -44,7 +44,7 @@ export class Post {
     @OneToMany(() => Postcontent, postContent => postContent.post)
     postContents: Postcontent[];
 
-    @ManyToOne(() => TravelRoute, travelRoute => travelRoute.post)
+    @ManyToOne(() => TravelRoute, travelRoute => travelRoute.post, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'travelRoute_id' })
     travelRoute: TravelRoute;
 }

@@ -1,4 +1,5 @@
-import { IsNumber, IsString, IsOptional, IsDate } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsNumber, IsString, IsOptional, IsDate, ValidateNested } from 'class-validator';
 
 export class UpdateDetailTravelDto {
   @IsNumber()
@@ -59,4 +60,13 @@ export class UpdateDetailTravelDto {
   @IsOptional()
   @IsString()
   accommodation_reservationLink?: string;
+}
+
+export class CreateDetailTravelItemDto {
+  @IsDate()
+  date: Date;
+
+  @ValidateNested({ each: true })
+  @Type(() => UpdateDetailTravelDto)
+  details: UpdateDetailTravelDto[];
 }

@@ -34,7 +34,7 @@ export class Diary {
   @JoinColumn({ name: 'detailtravel_id' })
   detailTravel: DetailTravel;
 
-  @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.diaries)
+  @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.diaries, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'travelroute_id' })
   travelRoute: TravelRoute;
 
