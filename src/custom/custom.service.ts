@@ -139,17 +139,36 @@ async getTravelRoute(userId: number): Promise<any> {
 
 
 // DetailTravel 조회
-async getDetailTravel(travelrouteId: number): Promise<DetailTravel[]> {
+async getDetailTravel(travelrouteId: number): Promise<any> {
   const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+  
   if (!travelRoute) {
     throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
+
   const detailTravels = await this.detailTravelRepository.find({
     where: { travelRoute: { id: travelrouteId } },
   });
 
-  return detailTravels;
+  // 날짜별로 그룹화
+  const groupedByDate = detailTravels.reduce((acc, detail) => {
+    const dateKey = detail.date.toISOString().split('T')[0]; // 날짜만 사용 (YYYY-MM-DD)
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
+    }
+    acc[dateKey].push(detail);
+    return acc;
+  }, {} as Record<string, DetailTravel[]>);
+
+  // 원하는 형식으로 변환
+  const result = Object.keys(groupedByDate).map(date => ({
+    date,
+    details: groupedByDate[date]
+  }));
+
+  return { items: result };
 }
+
 
 
 // TravelRoute 삭제
