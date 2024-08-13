@@ -1,6 +1,6 @@
 import { Controller, Post, Patch, Body, Param, Req, Res, HttpStatus, HttpException, Get, Delete, Query } from '@nestjs/common';
 import { CreateTravelRouteDto } from './dto/create-travelroute.dto';
-import { UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
+import { CreateDetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
 import { Request, Response } from 'express';
 import { TravelRouteService } from './custom.service';
 
@@ -214,7 +214,7 @@ export class TravelRouteController {
   @Post(':travelRouteId')
   async addDetailToTravelRoute(
     @Param('travelRouteId') travelRouteId: number,
-    @Body() details: UpdateDetailTravelDto[],
+    @Body('items') items: CreateDetailTravelItemDto[],
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -223,13 +223,13 @@ export class TravelRouteController {
       if (!user) {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
       }
-      
-      const detailTravels = await this.travelRouteService.addDetailToTravelRoute(travelRouteId, details);
+      const detailTravels = await this.travelRouteService.addDetailToTravelRoute(travelRouteId, items);
       return res.status(HttpStatus.OK).json(detailTravels);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.getStatus()).json({ message: error.message });
       }
+      console.log(error)
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
     }
   }

@@ -73,7 +73,7 @@ export class DetailTravel {
   @Column({ nullable: true })
   accommodation_reservationLink: string;  // 새로운 숙소 관련 컬럼 추가
 
-  @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels)
+  @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'travelroute_id' })
   travelRoute: TravelRoute;
 

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { TravelRoute } from './entities/travelroute.entity';
 import { DetailTravel } from './entities/detailtravel.entity';
 import { CreateTravelRouteDto } from './dto/create-travelroute.dto';
-import { UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
+import { CreateDetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
@@ -44,39 +44,45 @@ export class TravelRouteService {
     return this.travelRouteRepository.save(travelRoute);
   }
 
-  async addDetailToTravelRoute(travelRouteId: number, details: UpdateDetailTravelDto[]): Promise<DetailTravel[]> {
+  async addDetailToTravelRoute(
+    travelRouteId: number,
+    items: CreateDetailTravelItemDto[],
+  ): Promise<DetailTravel[]> {
     const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelRouteId } });
     if (!travelRoute) {
-        throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
     }
-
+  
     const detailTravels: DetailTravel[] = [];
-
-    for (const detail of details) {
+    console.log(items);
+    for (const item of items) {
+      for (const detail of item.details) {
         const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
         if (!place) {
-            throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
+          throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
         }
-
+  
         const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
         if (!region) {
-            throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
+          throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
         }
-
+  
         const detailTravel = this.detailTravelRepository.create({
-            ...detail, // 각각의 detail 요소를 사용
-            travelRoute: { id: travelRouteId },
-            place: { id: detail.place_id }, // 관계 설정
-            region: { id: detail.region_id } // 관계 설정
+          ...detail,
+          date: item.date,  // items의 date를 사용
+          travelRoute: { id: travelRouteId },
+          place: { id: detail.place_id },
+          region: { id: detail.region_id }
         });
-
+  
         await this.detailTravelRepository.save(detailTravel);
-
-        detailTravels.push(detailTravel); // 저장한 detailTravel을 배열에 추가
+  
+        detailTravels.push(detailTravel);
+      }
     }
-
+  
     return detailTravels;
-}
+  }
  // TravelRoute 수정
  async updateTravelRoute(travelrouteId: number, updateTravelRouteDto: { travel_name?: string, travelroute_range?: number }): Promise<any> {
   const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
@@ -147,7 +153,6 @@ async deleteTravelRoute(travelrouteId: number): Promise<void> {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
   await this.travelRouteRepository.remove(travelRoute);
-  await this.detailTravelRepository.delete({ travelRoute: {id: travelrouteId }});
   
 }
 
