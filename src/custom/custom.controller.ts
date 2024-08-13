@@ -76,9 +76,9 @@ export class TravelRouteController {
   }
 
   // TravelRoute 조회
-  @Get(':travelrouteId')
+  @Get(':userId')
   async getTravelRoute(
-      @Param('travelrouteId') travelrouteId: number,
+      @Param('userId') userId: number,
       @Req() req: Request,
       @Res() res: Response,
   ) {
@@ -87,7 +87,7 @@ export class TravelRouteController {
       if (!user) {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
           }
-          const result = await this.travelRouteService.getTravelRoute(travelrouteId);
+          const result = await this.travelRouteService.getTravelRoute(userId);
           return res.status(HttpStatus.OK).json(result);
         } catch (error) {
           if (error instanceof HttpException) {
@@ -98,10 +98,9 @@ export class TravelRouteController {
     }
 
   // DetailTravel 조회
-  @Get()
+  @Get(':travelrouteId/details')
   async getDetailTravel(
-    @Query('travelrouteId') travelrouteId: number,
-    @Query('detailtravelId') detailtravelId: number,
+    @Param('travelrouteId') travelrouteId: number,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -110,7 +109,7 @@ export class TravelRouteController {
           if (!user) {
             throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
           }
-          const result = await this.travelRouteService.getDetailTravel(travelrouteId, detailtravelId);
+          const result = await this.travelRouteService.getDetailTravel(travelrouteId);
           return res.status(HttpStatus.OK).json(result);
         } catch (error) {
           if (error instanceof HttpException) {
@@ -138,6 +137,7 @@ export class TravelRouteController {
           if (error instanceof HttpException) {
             return res.status(error.getStatus()).json({ message: error.message });
           }
+          console.log(error);
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
         }
   }

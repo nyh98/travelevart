@@ -24,7 +24,7 @@ export class Postcontent {
   @Column({ length: 255, nullable: true })
   contents_img: string;
 
-  @ManyToOne(() => Post, (post) => post.postContents)
+  @ManyToOne(() => Post, (post) => post.postContents,  { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'post_id' })
   post: Post;
 }

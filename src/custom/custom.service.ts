@@ -129,22 +129,28 @@ async updateDetailTravel(travelrouteId: number, detailtravelId: number, detail: 
 }
 
 // TravelRoute 조회
-async getTravelRoute(travelrouteId: number): Promise<any> {
-  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId }});
-  if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+async getTravelRoute(userId: number): Promise<any> {
+  const travelRoutes = await this.travelRouteRepository.find({ where: { user_id: userId }});
+  if (!travelRoutes || travelRoutes.length === 0) {
+      throw new NotFoundException('해당 사용자의 여행 경로를 찾을 수 없습니다.');
   }
-  return travelRoute;
+  return travelRoutes;
 }
 
+
 // DetailTravel 조회
-async getDetailTravel(travelrouteId: number, detailtravelId: number): Promise<any> {
-  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
-  if (!detailTravel) {
-      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+async getDetailTravel(travelrouteId: number): Promise<DetailTravel[]> {
+  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+  if (!travelRoute) {
+    throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
-  return detailTravel;
+  const detailTravels = await this.detailTravelRepository.find({
+    where: { travelRoute: { id: travelrouteId } },
+  });
+
+  return detailTravels;
 }
+
 
 // TravelRoute 삭제
 async deleteTravelRoute(travelrouteId: number): Promise<void> {
