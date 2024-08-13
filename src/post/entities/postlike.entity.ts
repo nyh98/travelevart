@@ -23,7 +23,7 @@ export class Postlike {
     @JoinColumn({ name: 'user_id' })
     user: User;
 
-    @ManyToOne(() => Post, post => post.postlike)
+    @ManyToOne(() => Post, post => post.postlike, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: Post;
 }

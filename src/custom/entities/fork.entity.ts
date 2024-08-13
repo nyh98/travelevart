@@ -21,7 +21,7 @@ export class Fork {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Post, post => post.forks)
+  @ManyToOne(() => Post, post => post.forks, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
