@@ -116,7 +116,7 @@ export class PostService implements OnModuleInit {
             .getOne();
 
           detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-            image: travel.detailtravel_image,
+            image: travel.placeImage,
           })) : [];
         }
 
@@ -227,7 +227,7 @@ export class PostService implements OnModuleInit {
           .getOne();
 
         detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-          image: travel.detailtravel_image,
+          image: travel.placeImage,
         })) : [];
       }
 
@@ -313,7 +313,7 @@ export class PostService implements OnModuleInit {
         created_at: entityPost.created_at,
         travelRoute_id: entityPost.travelRoute_id || 0,
         detailTravels: travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-          image: travel.detailtravel_image,
+          image: travel.placeImage,
         })) : [],
         contents: entityPost.postContents ? entityPost.postContents.map(content => ({
           id: content.id,
