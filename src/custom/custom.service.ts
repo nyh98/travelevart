@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { TravelRoute } from './entities/travelroute.entity';
 import { DetailTravel } from './entities/detailtravel.entity';
 import { CreateTravelRouteDto } from './dto/create-travelroute.dto';
@@ -44,79 +44,192 @@ export class TravelRouteService {
     return this.travelRouteRepository.save(travelRoute);
   }
 
-  async addDetailToTravelRoute(travelRouteId: number, updateDetailTravelDto: UpdateDetailTravelDto): Promise<DetailTravel[]> {
-    const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelRouteId } });
-    
+  async addDetailToTravelRoute(
+    travelrouteId: number,
+    updateDetailTravelDto: UpdateDetailTravelDto
+  ): Promise<any> {
+    const travelRoute = await this.travelRouteRepository.findOne({
+      where: { id: travelrouteId },
+    });
     if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
     }
   
-    const detailsToSave: DetailTravel[] = [];
-  
+    const createdDetails = [];
+
     for (const item of updateDetailTravelDto.items) {
       for (const detail of item.details) {
-        const newDetailTravel = new DetailTravel();
-        newDetailTravel.travelRoute = travelRoute;
-        newDetailTravel.date = new Date(item.date);
-        newDetailTravel.place_id = detail.place_id;
-        newDetailTravel.routeIndex = detail.routeIndex;
-        newDetailTravel.contents = detail.contents;
-        newDetailTravel.region_id = detail.region_id;
-        newDetailTravel.address = detail.address;
-        newDetailTravel.placeTitle = detail.place_title;
-        newDetailTravel.placeImage = detail.place_image;
-        newDetailTravel.mapLink = detail.map_link;
-        newDetailTravel.transportOption = updateDetailTravelDto.transport_option;  // 추가된 transport_option 필드
+        const place = await this.placeRepository.findOne({
+          where: { id: detail.place_id },
+        });
+        if (!place) {
+          throw new NotFoundException(`Place with id ${detail.place_id} not found`);
+        }
+
+        const newDetailTravel = this.detailTravelRepository.create({
+          travelroute_id: travelrouteId,
+          place_id: detail.place_id,
+          routeIndex: detail.routeIndex,
+          contents: detail.contents,
+          region_id: place.regionId,
+          address: place.address,          
+          placeTitle: place.title,  
+          placeImage: place.image,   
+          mapLink: detail.map_link || null, 
+          transportOption: updateDetailTravelDto.transport_option,
+          date: new Date(item.date),
+        });
   
-        detailsToSave.push(newDetailTravel);
+        const savedDetailTravel = await this.detailTravelRepository.save(newDetailTravel);
+        createdDetails.push(savedDetailTravel);
       }
     }
   
-    // 일괄 저장
-    return await this.detailTravelRepository.save(detailsToSave);
+    const response = {
+      transport_option: updateDetailTravelDto.transport_option,
+      items: createdDetails.reduce((acc, detail) => {
+        const date = detail.date.toISOString().split('T')[0];
+        let item = acc.find(i => i.date === date);
+  
+        if (!item) {
+          item = { date, details: [] };
+          acc.push(item);
+        }
+  
+        item.details.push({
+          detailtravel_id: detail.id,
+          travelroute_id: detail.travelroute_id,
+          place_id: detail.place_id,
+          route_index: detail.routeIndex,
+          contents: detail.contents,
+          region_id: detail.region_id,
+          address: detail.address,
+          place_title: detail.placeTitle,
+          place_image: detail.placeImage,
+          map_link: detail.mapLink,
+        });
+  
+        return acc;
+      }, []),
+    };
+  
+    return response;
   }
   
+  
+  
  // TravelRoute 수정
- async updateTravelRoute(travelrouteId: number, updateTravelRouteDto: { 
-  travel_name?: string, travelroute_range?: number, start_date?: Date, end_date?: Date }): Promise<any> {
-
-  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
+// TravelRoute 수정
+async updateTravelRoute(
+  travelrouteId: number,
+  updateTravelRouteDto: {
+    travel_name?: string;
+    travelroute_range?: number;
+    start_date?: Date;
+    end_date?: Date;
+    transport_option?: string;
+  }
+): Promise<any> {
+  // 여행 경로가 존재하는지 확인
+  const travelRoute = await this.travelRouteRepository.findOne({
+    where: { id: travelrouteId },
+  });
   if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+    throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
 
+  const originalStartDate = travelRoute.start_date;
+  const originalEndDate = travelRoute.end_date;
+
+  // travelRoute 정보 업데이트
   travelRoute.travel_name = updateTravelRouteDto.travel_name || travelRoute.travel_name;
   travelRoute.travelroute_range = updateTravelRouteDto.travelroute_range || travelRoute.travelroute_range;
   travelRoute.start_date = updateTravelRouteDto.start_date || travelRoute.start_date;
   travelRoute.end_date = updateTravelRouteDto.end_date || travelRoute.end_date;
 
+  // start_date가 변경된 경우 처리
+  if (updateTravelRouteDto.start_date && updateTravelRouteDto.start_date < originalStartDate) {
+    // 새 start_date 이전에 추가된 날짜에 대한 세부 여행 정보 생성
+    await this.createBasicDetailTravelForNewDates(
+      travelrouteId,
+      updateTravelRouteDto.start_date,
+      originalStartDate,
+      updateTravelRouteDto.transport_option
+    );
+  }
+
+  // end_date가 변경된 경우 처리
+  if (updateTravelRouteDto.end_date && updateTravelRouteDto.end_date > originalEndDate) {
+    // 새 end_date 이후에 추가된 날짜에 대한 세부 여행 정보 생성
+    await this.createBasicDetailTravelForNewDates(
+      travelrouteId,
+      originalEndDate,
+      updateTravelRouteDto.end_date,
+      updateTravelRouteDto.transport_option
+    );
+  }
+
+  // 업데이트된 여행 경로 저장
   return this.travelRouteRepository.save(travelRoute);
 }
 
+// 새로운 날짜에 대한 DetailTravel 기본 정보 생성
+private async createBasicDetailTravelForNewDates(
+  travelrouteId: number,
+  startDate: Date,
+  endDate: Date,
+  transportOption: string
+) {
+  // startDate에서 endDate까지 반복하면서 새로운 날짜에 대한 기본 세부 여행 정보 생성
+  let currentDate = new Date(startDate);
+
+  while (currentDate <= endDate) {
+    const newDetailTravel = this.detailTravelRepository.create({
+      travelroute_id: travelrouteId,
+      date: new Date(currentDate),
+      transportOption: transportOption, // transport_option만 설정
+    });
+    await this.detailTravelRepository.save(newDetailTravel);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+}
+
+
 // DetailTravel 수정
-async updateDetailTravel(detailtravelId: number, updateDetailTravelDto: UpdateDetailTravelDto): Promise<any> {
-  // 세부 여행 정보를 조회합니다.
-  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId } });
+async updateDetailTravel(
+  detailtravelId: number,
+  updateDetailTravelDto: UpdateDetailTravelDto
+): Promise<any> {
+  // 세부 여행 정보 조회
+  const detailTravel = await this.detailTravelRepository.findOne({
+    where: { id: detailtravelId },
+  });
   if (!detailTravel) {
     throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
   }
 
-  // DTO에 있는 항목을 detailTravel 엔티티에 업데이트합니다.
-  detailTravel.routeIndex = updateDetailTravelDto.items[0].details[0].routeIndex || detailTravel.routeIndex;
-  detailTravel.contents = updateDetailTravelDto.items[0].details[0].contents || detailTravel.contents;
-  detailTravel.region_id = updateDetailTravelDto.items[0].details[0].region_id || detailTravel.region_id;
-  detailTravel.address = updateDetailTravelDto.items[0].details[0].address || detailTravel.address;
-  detailTravel.placeTitle = updateDetailTravelDto.items[0].details[0].place_title || detailTravel.placeTitle;
-  detailTravel.placeImage = updateDetailTravelDto.items[0].details[0].place_image || detailTravel.placeImage;
-  detailTravel.mapLink = updateDetailTravelDto.items[0].details[0].map_link || detailTravel.mapLink;
-  detailTravel.transportOption = updateDetailTravelDto.transport_option || detailTravel.transportOption;
+  // DTO에 있는 항목을 detailTravel 엔티티에 업데이트
+  const detail = updateDetailTravelDto.items[0].details[0];
+
+  detailTravel.routeIndex = detail.routeIndex || detailTravel.routeIndex;
+  detailTravel.contents = detail.contents || detailTravel.contents;
+  detailTravel.region_id = detail.region_id || detailTravel.region_id;
+  detailTravel.address = detail.address || detailTravel.address;
+  detailTravel.placeTitle = detail.place_title || detailTravel.placeTitle;
+  detailTravel.placeImage = detail.place_image || detailTravel.placeImage;
+  detailTravel.mapLink = detail.map_link || detailTravel.mapLink;
+  detailTravel.transportOption =
+    updateDetailTravelDto.transport_option || detailTravel.transportOption;
 
   // 날짜와 관련된 필드 업데이트
-  detailTravel.date = updateDetailTravelDto.items[0].date ? new Date(updateDetailTravelDto.items[0].date) : detailTravel.date;
+  detailTravel.date = updateDetailTravelDto.items[0].date
+    ? new Date(updateDetailTravelDto.items[0].date)
+    : detailTravel.date;
 
-  // 업데이트된 세부 정보를 저장합니다.
+  // 업데이트된 세부 정보 저장
   return this.detailTravelRepository.save(detailTravel);
 }
+
 
 
 // TravelRoute 조회
@@ -131,34 +244,53 @@ async getTravelRoute(userId: number): Promise<any> {
 
 // DetailTravel 조회
 async getDetailTravel(travelrouteId: number): Promise<any> {
-  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
-  
-  if (!travelRoute) {
-    throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+  const detailTravels = await this.detailTravelRepository.find({ where: { travelroute_id: travelrouteId } });
+
+  if (!detailTravels || detailTravels.length === 0) {
+    throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
   }
 
-  const detailTravels = await this.detailTravelRepository.find({
-    where: { travelRoute: { id: travelrouteId } },
-  });
-
-  // 날짜별로 그룹화
   const groupedByDate = detailTravels.reduce((acc, detail) => {
-    const dateKey = detail.date.toISOString().split('T')[0]; // 날짜만 사용 (YYYY-MM-DD)
-    if (!acc[dateKey]) {
-      acc[dateKey] = [];
+    const date = detail.date instanceof Date ? detail.date : new Date(detail.date);
+    
+    if (isNaN(date.getTime())) {
+      throw new Error('유효하지 않은 날짜 형식이 포함되어 있습니다.');
     }
-    acc[dateKey].push(detail);
+    
+    const dateKey = date.toISOString().split('T')[0]; // 날짜를 'YYYY-MM-DD' 형식으로 변환
+
+    if (!acc[dateKey]) {
+      acc[dateKey] = {
+        date: dateKey,
+        details: []
+      };
+    }
+
+    acc[dateKey].details.push({
+      detailtravel_id: detail.id,
+      travelroute_id: detail.travelroute_id,
+      place_id: detail.place_id,
+      route_index: detail.routeIndex,
+      region_id: detail.region_id,
+      contents: detail.contents,
+      address: detail.address,
+      place_title: detail.placeTitle,
+      place_image: detail.placeImage,
+      map_link: detail.mapLink
+    });
+
     return acc;
-  }, {} as Record<string, DetailTravel[]>);
+  }, {});
 
-  // 원하는 형식으로 변환
-  const result = Object.keys(groupedByDate).map(date => ({
-    date,
-    details: groupedByDate[date]
-  }));
+  const transportOption = detailTravels.length > 0 ? detailTravels[0].transportOption : 'public'; // 첫 번째 여행 정보의 교통 수단 옵션을 사용
 
-  return { items: result };
+  return {
+    transport_option: transportOption,
+    items: Object.values(groupedByDate)
+  };
 }
+
+
 
 
 

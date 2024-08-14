@@ -23,6 +23,7 @@ export class TravelRouteController {
       if (error instanceof HttpException) {
         return res.status(error.getStatus()).json({ message: error.message });
       }
+      console.log(error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
     }
   }
@@ -32,7 +33,13 @@ export class TravelRouteController {
   @Patch(':travelrouteId')
   async updateTravelRoute(
       @Param('travelrouteId') travelrouteId: number,
-      @Body() updateTravelRouteDto: { travel_name?: string, travelroute_range?: number },
+      @Body() updateTravelRouteDto: {  
+        travel_name?: string, 
+        travelroute_range?: number, 
+        start_date?: Date, 
+        end_date?: Date, 
+        transport_option?: string  
+      },
       @Req() req: Request,
       @Res() res: Response,
   ) {
@@ -116,6 +123,7 @@ export class TravelRouteController {
           if (error instanceof HttpException) {
               return res.status(error.getStatus()).json({ message: error.message });
           }
+          console.log(error);
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
       }
   }

@@ -28,26 +28,26 @@ export class DetailTravel {
   @Column()
   region_id: number;
 
-  @Column()
+  @Column({type: 'date'})
   date: Date;
 
   @Column({ nullable: true })
   contents: string;
 
   @Column()
-  transportOption: string;  // 기존 traffic_info 컬럼 대체
+  transportOption: string;
 
   @Column()
-  address: string;  // 새로운 컬럼 추가
+  address: string;
 
   @Column()
-  placeTitle: string;  // 새로운 컬럼 추가
+  placeTitle: string;
 
   @Column()
-  placeImage: string;  // 새로운 컬럼 추가
+  placeImage: string;
 
   @Column({ nullable: true })
-  mapLink: string;  // 새로운 컬럼 추가
+  mapLink: string;
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'travelroute_id' })
