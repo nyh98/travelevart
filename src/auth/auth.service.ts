@@ -94,7 +94,6 @@ export class AuthService {
   }
 
   async localLogin(localLoginData: LocalLoginAuthDto) {
-    Logger.debug(`테스트ㅡㅡㅡㅡㅡㅡㅡㅡ`);
     const user = await this.userRepository.findOne({
       where: { email: localLoginData.email },
     });
