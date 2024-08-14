@@ -1,65 +1,25 @@
 import { Type } from 'class-transformer';
-import { IsNumber, IsString, IsOptional, IsDate, ValidateNested } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsDate, ValidateNested, IsArray } from 'class-validator';
 
 export class UpdateDetailTravelDto {
-  @IsNumber()
-  place_id: number;
-
-  @IsNumber()
-  routeIndex: number;
-
-  @IsNumber()
-  region_id: number;
-
-  @IsDate()
-  date: Date;
-
   @IsString()
-  playTime: string;
+  transport_option: string;  // 'public' 또는 'car'
 
-  @IsString()
-  contents: string;
+  @IsArray()
+  items: {
+    date: string; // 여행 날짜
 
-  @IsString()
-  transportOption: string;
-
-  @IsString()
-  starting_point: string;
-
-  @IsString()
-  detailtravel_image: string;
-
-  @IsString()
-  address: string;
-
-  @IsString()
-  placeTitle: string;
-
-  @IsString()
-  placeImage: string;
-
-  @IsNumber()
-  day: number;
-
-  @IsOptional()
-  @IsString()
-  mapLink?: string;
-
-  @IsOptional()
-  @IsNumber()
-  accommodation_day?: number;
-
-  @IsOptional()
-  @IsString()
-  accommodation_address?: string;
-
-  @IsOptional()
-  @IsString()
-  accommodation_title?: string;
-
-  @IsOptional()
-  @IsString()
-  accommodation_reservationLink?: string;
+    details: {
+      place_id: number;
+      routeIndex: number;
+      contents: string;
+      region_id: number;
+      address: string;
+      place_title: string;
+      place_image: string;
+      map_link: string | null;
+    }[];
+  }[];
 }
 
 export class CreateDetailTravelItemDto {

@@ -44,47 +44,42 @@ export class TravelRouteService {
     return this.travelRouteRepository.save(travelRoute);
   }
 
-  async addDetailToTravelRoute(
-    travelRouteId: number,
-    items: CreateDetailTravelItemDto[],
-  ): Promise<DetailTravel[]> {
+  async addDetailToTravelRoute(travelRouteId: number, updateDetailTravelDto: UpdateDetailTravelDto): Promise<DetailTravel[]> {
     const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelRouteId } });
+    
     if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
     }
   
-    const detailTravels: DetailTravel[] = [];
-    console.log(items);
-    for (const item of items) {
+    const detailsToSave: DetailTravel[] = [];
+  
+    for (const item of updateDetailTravelDto.items) {
       for (const detail of item.details) {
-        const place = await this.placeRepository.findOne({ where: { id: detail.place_id } });
-        if (!place) {
-          throw new NotFoundException(`ID가 ${detail.place_id}인 장소를 찾을 수 없습니다.`);
-        }
+        const newDetailTravel = new DetailTravel();
+        newDetailTravel.travelRoute = travelRoute;
+        newDetailTravel.date = new Date(item.date);
+        newDetailTravel.place_id = detail.place_id;
+        newDetailTravel.routeIndex = detail.routeIndex;
+        newDetailTravel.contents = detail.contents;
+        newDetailTravel.region_id = detail.region_id;
+        newDetailTravel.address = detail.address;
+        newDetailTravel.placeTitle = detail.place_title;
+        newDetailTravel.placeImage = detail.place_image;
+        newDetailTravel.mapLink = detail.map_link;
+        newDetailTravel.transportOption = updateDetailTravelDto.transport_option;  // 추가된 transport_option 필드
   
-        const region = await this.regionRepository.findOne({ where: { id: detail.region_id } });
-        if (!region) {
-          throw new NotFoundException(`ID가 ${detail.region_id}인 지역을 찾을 수 없습니다.`);
-        }
-  
-        const detailTravel = this.detailTravelRepository.create({
-          ...detail,
-          date: item.date,  // items의 date를 사용
-          travelRoute: { id: travelRouteId },
-          place: { id: detail.place_id },
-          region: { id: detail.region_id }
-        });
-  
-        await this.detailTravelRepository.save(detailTravel);
-  
-        detailTravels.push(detailTravel);
+        detailsToSave.push(newDetailTravel);
       }
     }
   
-    return detailTravels;
+    // 일괄 저장
+    return await this.detailTravelRepository.save(detailsToSave);
   }
+  
  // TravelRoute 수정
- async updateTravelRoute(travelrouteId: number, updateTravelRouteDto: { travel_name?: string, travelroute_range?: number }): Promise<any> {
+ async updateTravelRoute(travelrouteId: number, updateTravelRouteDto: { 
+  travel_name?: string, travelroute_range?: number, start_date?: Date, end_date?: Date }): Promise<any> {
+
   const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
   if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
@@ -92,41 +87,37 @@ export class TravelRouteService {
 
   travelRoute.travel_name = updateTravelRouteDto.travel_name || travelRoute.travel_name;
   travelRoute.travelroute_range = updateTravelRouteDto.travelroute_range || travelRoute.travelroute_range;
+  travelRoute.start_date = updateTravelRouteDto.start_date || travelRoute.start_date;
+  travelRoute.end_date = updateTravelRouteDto.end_date || travelRoute.end_date;
 
   return this.travelRouteRepository.save(travelRoute);
 }
 
 // DetailTravel 수정
-async updateDetailTravel(travelrouteId: number, detailtravelId: number, detail: UpdateDetailTravelDto): Promise<any> {
-  const travelRoute = await this.travelRouteRepository.findOne({ where: { id: travelrouteId } });
-  if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
-  }
-
-  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
+async updateDetailTravel(detailtravelId: number, updateDetailTravelDto: UpdateDetailTravelDto): Promise<any> {
+  // 세부 여행 정보를 조회합니다.
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId } });
   if (!detailTravel) {
-      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+    throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
   }
 
-  detailTravel.routeIndex = detail.routeIndex || detailTravel.routeIndex;
-  detailTravel.date = detail.date ? new Date(detail.date) : detailTravel.date;
-  detailTravel.playTime = detail.playTime || detailTravel.playTime;
-  detailTravel.contents = detail.contents || detailTravel.contents;
-  detailTravel.transportOption = detail.transportOption || detailTravel.transportOption;
-  detailTravel.starting_point = detail.starting_point || detailTravel.starting_point;
-  detailTravel.detailtravel_image = detail.detailtravel_image || detailTravel.detailtravel_image;
-  detailTravel.address = detail.address || detailTravel.address;
-  detailTravel.placeTitle = detail.placeTitle || detailTravel.placeTitle;
-  detailTravel.placeImage = detail.placeImage || detailTravel.placeImage;
-  detailTravel.day = detail.day || detailTravel.day;
-  detailTravel.mapLink = detail.mapLink || detailTravel.mapLink;
-  detailTravel.accommodation_day = detail.accommodation_day || detailTravel.accommodation_day;
-  detailTravel.accommodation_address = detail.accommodation_address || detailTravel.accommodation_address;
-  detailTravel.accommodation_title = detail.accommodation_title || detailTravel.accommodation_title;
-  detailTravel.accommodation_reservationLink = detail.accommodation_reservationLink || detailTravel.accommodation_reservationLink;
+  // DTO에 있는 항목을 detailTravel 엔티티에 업데이트합니다.
+  detailTravel.routeIndex = updateDetailTravelDto.items[0].details[0].routeIndex || detailTravel.routeIndex;
+  detailTravel.contents = updateDetailTravelDto.items[0].details[0].contents || detailTravel.contents;
+  detailTravel.region_id = updateDetailTravelDto.items[0].details[0].region_id || detailTravel.region_id;
+  detailTravel.address = updateDetailTravelDto.items[0].details[0].address || detailTravel.address;
+  detailTravel.placeTitle = updateDetailTravelDto.items[0].details[0].place_title || detailTravel.placeTitle;
+  detailTravel.placeImage = updateDetailTravelDto.items[0].details[0].place_image || detailTravel.placeImage;
+  detailTravel.mapLink = updateDetailTravelDto.items[0].details[0].map_link || detailTravel.mapLink;
+  detailTravel.transportOption = updateDetailTravelDto.transport_option || detailTravel.transportOption;
 
+  // 날짜와 관련된 필드 업데이트
+  detailTravel.date = updateDetailTravelDto.items[0].date ? new Date(updateDetailTravelDto.items[0].date) : detailTravel.date;
+
+  // 업데이트된 세부 정보를 저장합니다.
   return this.detailTravelRepository.save(detailTravel);
 }
+
 
 // TravelRoute 조회
 async getTravelRoute(userId: number): Promise<any> {
@@ -182,8 +173,8 @@ async deleteTravelRoute(travelrouteId: number): Promise<void> {
 }
 
 // DetailTravel 삭제
-async deleteDetailTravel(travelrouteId: number, detailtravelId: number): Promise<void> {
-  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId, travelRoute: { id: travelrouteId } } });
+async deleteDetailTravel(detailtravelId: number): Promise<void> {
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId} });
   if (!detailTravel) {
       throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
   }
@@ -250,10 +241,6 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
       placeImage: detailTravel.placeImage,
       day: detailTravel.day,
       mapLink: detailTravel.mapLink,
-      accommodation_day: detailTravel.accommodation_day,
-      accommodation_address: detailTravel.accommodation_address,
-      accommodation_title: detailTravel.accommodation_title,
-      accommodation_reservationLink: detailTravel.accommodation_reservationLink,
     });
 
       await this.detailTravelRepository.save(newDetailTravel);
@@ -268,7 +255,7 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
     userId: number,
   ): Promise<any> {
     try {
-      const { travel_name, travelroute_range, transportOption, detailRoute, accommodation } = createTravelRouteDto;
+      const { travel_name, travelroute_range, transportOption, detailRoute } = createTravelRouteDto;
   
       // 새로운 TravelRoute 생성
       const newTravelRoute = this.travelRouteRepository.create({
@@ -303,17 +290,12 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
             playTime: detail.playTime,
             contents: null,
             transportOption: transportOption,
-            starting_point: null,
             detailtravel_image: detail.placeImage,
             address: detail.address,
             placeTitle: detail.placeTitle,
             placeImage: detail.placeImage,
             day: detail.day,
             mapLink: detail.mapLink,
-            accommodation_day: null,
-            accommodation_address: null,
-            accommodation_title: null,
-            accommodation_reservationLink: null,
           });
   
           return detailTravel;
@@ -322,30 +304,6 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
           throw error;  // 다시 던져서 외부에서 처리할 수 있게 함
         }
       }));
-  
-      // 저장 후, 숙소 정보 처리
-      const savedDetailTravels = await this.detailTravelRepository.save(detailTravelEntities);
-  
-      // 숙소 정보를 DetailTravel의 적절한 엔트리에 저장
-      if (accommodation) {
-        for (const acc of accommodation) {
-          try {
-            const detailTravel = savedDetailTravels.find(dt => dt.day === acc.day);
-            if (detailTravel) {
-              detailTravel.accommodation_day = acc.day;
-              detailTravel.accommodation_address = acc.address;
-              detailTravel.accommodation_title = acc.title;
-              detailTravel.accommodation_reservationLink = acc.reservationLink;
-  
-              await this.detailTravelRepository.save(detailTravel);
-            }
-          } catch (error) {
-            console.error('Error while updating accommodation details:', error);
-            throw error;
-          }
-        }
-      }
-  
       return savedTravelRoute;
     } catch (error) {
       console.error('Error in saveRecommendedRoute:', error);
