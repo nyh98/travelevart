@@ -7,8 +7,7 @@ export class UpdateDetailTravelDto {
 
   @IsArray()
   items: {
-    date: string; // 여행 날짜
-
+    date: Date; // 여행 날짜
     details: {
       place_id: number;
       routeIndex: number;
