@@ -31,20 +31,11 @@ export class DetailTravel {
   @Column()
   date: Date;
 
-  @Column()
-  playTime: string;  // 기존 time 컬럼 대체
-
   @Column({ nullable: true })
   contents: string;
 
   @Column()
   transportOption: string;  // 기존 traffic_info 컬럼 대체
-
-  @Column({ nullable: true })
-  starting_point: string;
-
-  @Column()
-  detailtravel_image: string;
 
   @Column()
   address: string;  // 새로운 컬럼 추가
@@ -55,23 +46,8 @@ export class DetailTravel {
   @Column()
   placeImage: string;  // 새로운 컬럼 추가
 
-  @Column()
-  day: number;  // 새로운 컬럼 추가
-
   @Column({ nullable: true })
   mapLink: string;  // 새로운 컬럼 추가
-
-  @Column({ nullable: true })
-  accommodation_day: number;  // 새로운 숙소 관련 컬럼 추가
-
-  @Column({ nullable: true })
-  accommodation_address: string;  // 새로운 숙소 관련 컬럼 추가
-
-  @Column({ nullable: true })
-  accommodation_title: string;  // 새로운 숙소 관련 컬럼 추가
-
-  @Column({ nullable: true })
-  accommodation_reservationLink: string;  // 새로운 숙소 관련 컬럼 추가
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'travelroute_id' })

@@ -231,15 +231,11 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
       routeIndex: detailTravel.routeIndex,  // 'count'를 'routeIndex'로 수정
       region_id: detailTravel.region_id,
       date: detailTravel.date,
-      playTime: detailTravel.playTime,  // 'time'을 'playTime'으로 수정
       contents: detailTravel.contents,
       transportOption: detailTravel.transportOption,  // 'traffic_info'를 'transportOption'으로 수정
-      starting_point: detailTravel.starting_point,
-      detailtravel_image: detailTravel.detailtravel_image,
       address: detailTravel.address,
       placeTitle: detailTravel.placeTitle,
       placeImage: detailTravel.placeImage,
-      day: detailTravel.day,
       mapLink: detailTravel.mapLink,
     });
 
@@ -287,14 +283,11 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
             routeIndex: detail.routeIndex,
             region_id: place.regionId,
             date: new Date(detail.date),
-            playTime: detail.playTime,
             contents: null,
             transportOption: transportOption,
-            detailtravel_image: detail.placeImage,
             address: detail.address,
             placeTitle: detail.placeTitle,
             placeImage: detail.placeImage,
-            day: detail.day,
             mapLink: detail.mapLink,
           });
   

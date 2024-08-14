@@ -112,11 +112,11 @@ export class PostService implements OnModuleInit {
           const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
             .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
             .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
-            .orderBy('detailtravel.count', 'ASC')
+            .orderBy('detailtravel.routeIndex', 'ASC')
             .getOne();
 
           detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-            image: travel.detailtravel_image,
+            image: travel.placeImage,
           })) : [];
         }
 
@@ -216,19 +216,38 @@ export class PostService implements OnModuleInit {
     const rawPosts = await query.getRawAndEntities();
     const posts = rawPosts.entities;
 
-    return posts.map(post => ({
-      id: post.id,
-      author: post.user.user_name,
-      profileImg: post.user.profile_img,
-      title: post.title,
-      contents: post.postContents.map(content => ({
-        id: content.id,
-        postId: content.post_id,
-        order: content.order,
-        text: content.contents,
-        image: content.contents_img
-      })), // postContents가 없을 경우 빈 배열 사용
-    }));
+    const postDetailPromises = posts.map(async (post, index) => {
+      let detailTravels = [];
+
+      if (post.travelRoute_id) {
+        const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
+          .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
+          .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
+          .orderBy('detailtravel.routeIndex', 'ASC')
+          .getOne();
+
+        detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
+          image: travel.placeImage,
+        })) : [];
+      }
+
+      return {
+        id: post.id,
+        author: post.user.user_name,
+        profileImg: post.user.profile_img,        
+        title: post.title,
+        detailTravels: detailTravels,
+        contents: post.postContents.map(content => ({
+          id: content.id,
+          postId: content.post_id,
+          order: content.order,
+          text: content.contents,
+          image: content.contents_img
+        })),
+      };
+    });
+
+    return Promise.all(postDetailPromises);
   }
 
   // 인기 게시물 업데이트
@@ -279,7 +298,7 @@ export class PostService implements OnModuleInit {
       const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
         .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
         .where('travelroute.id = :travelRouteId', { travelRouteId: entityPost.travelRoute_id })
-        .orderBy('detailtravel.count', 'ASC')
+        .orderBy('detailtravel.routeIndex', 'ASC')
         .getOne();
 
   
@@ -294,7 +313,7 @@ export class PostService implements OnModuleInit {
         created_at: entityPost.created_at,
         travelRoute_id: entityPost.travelRoute_id || 0,
         detailTravels: travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-          image: travel.detailtravel_image,
+          image: travel.placeImage,
         })) : [],
         contents: entityPost.postContents ? entityPost.postContents.map(content => ({
           id: content.id,
