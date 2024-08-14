@@ -4,6 +4,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { KakaoAuthDto } from './dto/kakao-auth.dto';
@@ -93,7 +94,7 @@ export class AuthService {
   }
 
   async localLogin(localLoginData: LocalLoginAuthDto) {
-    console.log("여기다~~~")
+    Logger.debug(`테스트ㅡㅡㅡㅡㅡㅡㅡㅡ`);
     const user = await this.userRepository.findOne({
       where: { email: localLoginData.email },
     });
