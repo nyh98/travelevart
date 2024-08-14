@@ -16,6 +16,7 @@ import { S3Module } from './s3/s3.module';
 import { TravelRouteModule } from './custom/custom.module';
 import { GptModule } from './gpt/gpt.module';
 import { EventModule } from './event/event.module';
+import { HealthcheckModule } from './healthcheck/healthcheck.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { EventModule } from './event/event.module';
     S3Module,
     GptModule,
     EventModule,
+    HealthcheckModule,
   ],
   controllers: [],
   providers: [],
