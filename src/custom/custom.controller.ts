@@ -52,10 +52,11 @@ export class TravelRouteController {
   }
 
   // DetailTravel 수정
-  @Patch()
+  @Patch(':detailtravelId/details')
   async updateDetailTravel(
-    @Query('travelrouteId') travelrouteId: number,
-    @Query('detailtravelId') detailtravelId: number,
+    // @Query('travelrouteId') travelrouteId: number,
+    // @Query('detailtravelId') detailtravelId: number,
+    @Param('detailtravelId') detailtravelId: number,
     @Body() detail: UpdateDetailTravelDto,
     @Req() req: Request,
     @Res() res: Response,
@@ -65,7 +66,7 @@ export class TravelRouteController {
           if (!user) {
               throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
           }
-          const result = await this.travelRouteService.updateDetailTravel(travelrouteId, detailtravelId, detail);
+          const result = await this.travelRouteService.updateDetailTravel(detailtravelId, detail);
           return res.status(HttpStatus.OK).json(result);
       } catch (error) {
         if (error instanceof HttpException) {
@@ -143,10 +144,11 @@ export class TravelRouteController {
   }
 
   // DetailTravel 삭제
-  @Delete()
+  @Delete(':detailtravelId/details')
   async deleteDetailTravel(
-    @Query('travelrouteId') travelrouteId: number,
-    @Query('detailtravelId') detailtravelId: number,
+    // @Query('travelrouteId') travelrouteId: number,
+    // @Query('detailtravelId') detailtravelId: number,
+    @Param('detailtravelId') detailtravelId: number,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -155,7 +157,7 @@ export class TravelRouteController {
           if (!user) {
               throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
           }
-          await this.travelRouteService.deleteDetailTravel(travelrouteId, detailtravelId);
+          await this.travelRouteService.deleteDetailTravel(detailtravelId);
           return res.status(HttpStatus.NO_CONTENT).send();
       } catch (error) {
           if (error instanceof HttpException) {
@@ -214,23 +216,24 @@ export class TravelRouteController {
   @Post(':travelRouteId')
   async addDetailToTravelRoute(
     @Param('travelRouteId') travelRouteId: number,
-    @Body('items') items: CreateDetailTravelItemDto[],
+    @Body() updateDetailTravelDto: UpdateDetailTravelDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
     try {
-      const user = req.user; 
+      const user = req.user;
       if (!user) {
         throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
       }
-      const detailTravels = await this.travelRouteService.addDetailToTravelRoute(travelRouteId, items);
+
+      const detailTravels = await this.travelRouteService.addDetailToTravelRoute(travelRouteId, updateDetailTravelDto);
       return res.status(HttpStatus.OK).json(detailTravels);
     } catch (error) {
       if (error instanceof HttpException) {
         return res.status(error.getStatus()).json({ message: error.message });
       }
-      console.log(error)
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
     }
   }
+
 }

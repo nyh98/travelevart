@@ -5,7 +5,6 @@ export class CreateTravelRouteDto {
   start_date: Date;
   end_date: Date;
   detailRoute: DetailRouteDto[];
-  accommodation: AccommodationDto[];
 }
 
 export class DetailRouteDto {
@@ -21,11 +20,4 @@ export class DetailRouteDto {
   estimatedTime: string;
   playTime: string;
   mapLink: string;
-}
-
-export class AccommodationDto {
-  day: number;
-  address: string;
-  title: string;
-  reservationLink: string;
 }
