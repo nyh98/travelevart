@@ -1,9 +1,9 @@
 export class CreateTravelRouteDto {
-  travel_name: string;
-  travelroute_range: number;
+  travelName: string;
+  travelrouteRange: number;
   transportOption: string;
-  start_date: Date;
-  end_date: Date;
+  startDate: Date;
+  endDate: Date;
   detailRoute: DetailRouteDto[];
 }
 

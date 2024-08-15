@@ -17,16 +17,16 @@ export class DetailTravel {
   id: number;
 
   @Column()
-  travelroute_id: number;
+  travelrouteId: number;
 
   @Column()
-  place_id: number;
+  placeId: number;
 
   @Column()
   routeIndex: number;  // 기존 count 컬럼 대체
 
   @Column()
-  region_id: number;
+  regionId: number;
 
   @Column({type: 'date'})
   date: Date;

@@ -3,20 +3,20 @@ import { IsNumber, IsString, IsOptional, IsDate, ValidateNested, IsArray } from 
 
 export class UpdateDetailTravelDto {
   @IsString()
-  transport_option: string;  // 'public' 또는 'car'
+  transportOption: string;  // 'public' 또는 'car'
 
   @IsArray()
   items: {
     date: Date; // 여행 날짜
     details: {
-      place_id: number;
+      placeId: number;
       routeIndex: number;
       contents: string;
-      region_id: number;
+      regionId: number;
       address: string;
-      place_title: string;
-      place_image: string;
-      map_link: string | null;
+      placeTitle: string;
+      placeImage: string;
+      mapLink: string | null;
     }[];
   }[];
 }

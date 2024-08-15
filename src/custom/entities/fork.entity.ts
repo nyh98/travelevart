@@ -9,13 +9,13 @@ export class Fork {
   id: number;
 
   @Column()
-  post_id: number;
+  postId: number;
 
   @Column()
-  user_id: number;
+  userId: number;
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  forked_at: Date;
+  forkedAt: Date;
 
   @ManyToOne(() => User, user => user.forks)
   @JoinColumn({ name: 'user_id' })

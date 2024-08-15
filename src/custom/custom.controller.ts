@@ -34,11 +34,11 @@ export class TravelRouteController {
   async updateTravelRoute(
       @Param('travelrouteId') travelrouteId: number,
       @Body() updateTravelRouteDto: {  
-        travel_name?: string, 
-        travelroute_range?: number, 
-        start_date?: Date, 
-        end_date?: Date, 
-        transport_option?: string  
+        travelName?: string, 
+        travelrouteRange?: number, 
+        startDate?: Date, 
+        endDate?: Date, 
+        transportOption?: string  
       },
       @Req() req: Request,
       @Res() res: Response,
