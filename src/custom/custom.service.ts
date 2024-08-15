@@ -39,7 +39,7 @@ export class TravelRouteService {
 
     const travelRoute = this.travelRouteRepository.create({
       ...createTravelRouteDto,
-      user: { id: userId },
+      userId: userId,
     });
     return this.travelRouteRepository.save(travelRoute);
   }
@@ -60,23 +60,23 @@ export class TravelRouteService {
     for (const item of updateDetailTravelDto.items) {
       for (const detail of item.details) {
         const place = await this.placeRepository.findOne({
-          where: { id: detail.place_id },
+          where: { id: detail.placeId },
         });
         if (!place) {
-          throw new NotFoundException(`Place with id ${detail.place_id} not found`);
+          throw new NotFoundException(`Place with id ${detail.placeId} not found`);
         }
 
         const newDetailTravel = this.detailTravelRepository.create({
-          travelroute_id: travelrouteId,
-          place_id: detail.place_id,
+          travelrouteId: travelrouteId,
+          placeId: detail.placeId,
           routeIndex: detail.routeIndex,
           contents: detail.contents,
-          region_id: place.regionId,
+          regionId: place.regionId,
           address: place.address,          
           placeTitle: place.title,  
           placeImage: place.image,   
-          mapLink: detail.map_link || null, 
-          transportOption: updateDetailTravelDto.transport_option,
+          mapLink: detail.mapLink || null, 
+          transportOption: updateDetailTravelDto.transportOption,
           date: new Date(item.date),
         });
   
@@ -86,7 +86,7 @@ export class TravelRouteService {
     }
   
     const response = {
-      transport_option: updateDetailTravelDto.transport_option,
+      transportOption: updateDetailTravelDto.transportOption,
       items: createdDetails.reduce((acc, detail) => {
         const date = detail.date.toISOString().split('T')[0];
         let item = acc.find(i => i.date === date);
@@ -97,16 +97,16 @@ export class TravelRouteService {
         }
   
         item.details.push({
-          detailtravel_id: detail.id,
-          travelroute_id: detail.travelroute_id,
-          place_id: detail.place_id,
-          route_index: detail.routeIndex,
+          detailtravelId: detail.id,
+          travelrouteId: detail.travelrouteId,
+          placeId: detail.placeId,
+          routeIndex: detail.routeIndex,
           contents: detail.contents,
-          region_id: detail.region_id,
+          regionId: detail.regionId,
           address: detail.address,
-          place_title: detail.placeTitle,
-          place_image: detail.placeImage,
-          map_link: detail.mapLink,
+          placeTitle: detail.placeTitle,
+          placeImage: detail.placeImage,
+          mapLink: detail.mapLink,
         });
   
         return acc;
@@ -123,11 +123,11 @@ export class TravelRouteService {
 async updateTravelRoute(
   travelrouteId: number,
   updateTravelRouteDto: {
-    travel_name?: string;
-    travelroute_range?: number;
-    start_date?: Date;
-    end_date?: Date;
-    transport_option?: string;
+    travelName?: string;
+    travelrouteRange?: number;
+    startDate?: Date;
+    endDate?: Date;
+    transportOption?: string;
   }
 ): Promise<any> {
   // 여행 경로가 존재하는지 확인
@@ -138,34 +138,34 @@ async updateTravelRoute(
     throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
 
-  const originalStartDate = travelRoute.start_date;
-  const originalEndDate = travelRoute.end_date;
+  const originalStartDate = travelRoute.startDate;
+  const originalEndDate = travelRoute.endDate;
 
   // travelRoute 정보 업데이트
-  travelRoute.travel_name = updateTravelRouteDto.travel_name || travelRoute.travel_name;
-  travelRoute.travelroute_range = updateTravelRouteDto.travelroute_range || travelRoute.travelroute_range;
-  travelRoute.start_date = updateTravelRouteDto.start_date || travelRoute.start_date;
-  travelRoute.end_date = updateTravelRouteDto.end_date || travelRoute.end_date;
+  travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
+  travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
+  travelRoute.startDate = updateTravelRouteDto.startDate || travelRoute.startDate;
+  travelRoute.endDate = updateTravelRouteDto.endDate || travelRoute.endDate;
 
   // start_date가 변경된 경우 처리
-  if (updateTravelRouteDto.start_date && updateTravelRouteDto.start_date < originalStartDate) {
+  if (updateTravelRouteDto.startDate && updateTravelRouteDto.startDate < originalStartDate) {
     // 새 start_date 이전에 추가된 날짜에 대한 세부 여행 정보 생성
     await this.createBasicDetailTravelForNewDates(
       travelrouteId,
-      updateTravelRouteDto.start_date,
+      updateTravelRouteDto.startDate,
       originalStartDate,
-      updateTravelRouteDto.transport_option
+      updateTravelRouteDto.transportOption
     );
   }
 
   // end_date가 변경된 경우 처리
-  if (updateTravelRouteDto.end_date && updateTravelRouteDto.end_date > originalEndDate) {
+  if (updateTravelRouteDto.endDate && updateTravelRouteDto.endDate > originalEndDate) {
     // 새 end_date 이후에 추가된 날짜에 대한 세부 여행 정보 생성
     await this.createBasicDetailTravelForNewDates(
       travelrouteId,
       originalEndDate,
-      updateTravelRouteDto.end_date,
-      updateTravelRouteDto.transport_option
+      updateTravelRouteDto.endDate,
+      updateTravelRouteDto.transportOption
     );
   }
 
@@ -185,7 +185,7 @@ private async createBasicDetailTravelForNewDates(
 
   while (currentDate <= endDate) {
     const newDetailTravel = this.detailTravelRepository.create({
-      travelroute_id: travelrouteId,
+      travelrouteId: travelrouteId,
       date: new Date(currentDate),
       transportOption: transportOption, // transport_option만 설정
     });
@@ -213,13 +213,13 @@ async updateDetailTravel(
 
   detailTravel.routeIndex = detail.routeIndex || detailTravel.routeIndex;
   detailTravel.contents = detail.contents || detailTravel.contents;
-  detailTravel.region_id = detail.region_id || detailTravel.region_id;
+  detailTravel.regionId = detail.regionId || detailTravel.regionId;
   detailTravel.address = detail.address || detailTravel.address;
-  detailTravel.placeTitle = detail.place_title || detailTravel.placeTitle;
-  detailTravel.placeImage = detail.place_image || detailTravel.placeImage;
-  detailTravel.mapLink = detail.map_link || detailTravel.mapLink;
+  detailTravel.placeTitle = detail.placeTitle || detailTravel.placeTitle;
+  detailTravel.placeImage = detail.placeImage || detailTravel.placeImage;
+  detailTravel.mapLink = detail.mapLink || detailTravel.mapLink;
   detailTravel.transportOption =
-    updateDetailTravelDto.transport_option || detailTravel.transportOption;
+    updateDetailTravelDto.transportOption || detailTravel.transportOption;
 
   // 날짜와 관련된 필드 업데이트
   detailTravel.date = updateDetailTravelDto.items[0].date
@@ -234,7 +234,7 @@ async updateDetailTravel(
 
 // TravelRoute 조회
 async getTravelRoute(userId: number): Promise<any> {
-  const travelRoutes = await this.travelRouteRepository.find({ where: { user_id: userId }});
+  const travelRoutes = await this.travelRouteRepository.find({ where: { userId: userId }});
   if (!travelRoutes || travelRoutes.length === 0) {
       throw new NotFoundException('해당 사용자의 여행 경로를 찾을 수 없습니다.');
   }
@@ -244,7 +244,7 @@ async getTravelRoute(userId: number): Promise<any> {
 
 // DetailTravel 조회
 async getDetailTravel(travelrouteId: number): Promise<any> {
-  const detailTravels = await this.detailTravelRepository.find({ where: { travelroute_id: travelrouteId } });
+  const detailTravels = await this.detailTravelRepository.find({ where: { travelrouteId: travelrouteId } });
 
   if (!detailTravels || detailTravels.length === 0) {
     throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
@@ -267,16 +267,16 @@ async getDetailTravel(travelrouteId: number): Promise<any> {
     }
 
     acc[dateKey].details.push({
-      detailtravel_id: detail.id,
-      travelroute_id: detail.travelroute_id,
-      place_id: detail.place_id,
-      route_index: detail.routeIndex,
-      region_id: detail.region_id,
+      detailtravelId: detail.id,
+      travelrouteId: detail.travelrouteId,
+      placeId: detail.placeId,
+      routeIndex: detail.routeIndex,
+      regionId: detail.regionId,
       contents: detail.contents,
       address: detail.address,
-      place_title: detail.placeTitle,
-      place_image: detail.placeImage,
-      map_link: detail.mapLink
+      placeTitle: detail.placeTitle,
+      placeImage: detail.placeImage,
+      mapLink: detail.mapLink
     });
 
     return acc;
@@ -285,7 +285,7 @@ async getDetailTravel(travelrouteId: number): Promise<any> {
   const transportOption = detailTravels.length > 0 ? detailTravels[0].transportOption : 'public'; // 첫 번째 여행 정보의 교통 수단 옵션을 사용
 
   return {
-    transport_option: transportOption,
+    transportOption: transportOption,
     items: Object.values(groupedByDate)
   };
 }
@@ -336,32 +336,32 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
 
   // 포크 데이터 생성
   const fork = this.forkRepository.create({ 
-    user_id: userId, 
-    post_id: postId,
-    forked_at: new Date(), 
+    userId: userId, 
+    postId: postId,
+    forkedAt: new Date(), 
   });
 
   await this.forkRepository.save(fork);
 
   // 새로운 TravelRoute 데이터 생성
   const newTravelRoute = this.travelRouteRepository.create({
-    user_id: userId,
-    travel_name: travelRoute.travel_name,
-    travelroute_range: travelRoute.travelroute_range,
+    userId: userId,
+    travelName: travelRoute.travelName,
+    travelrouteRange: travelRoute.travelrouteRange,
   });
 
   const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
 
   // 원래 travelRoute에 연결된 detailtravel 데이터 가져오기
-  const detailTravels = await this.detailTravelRepository.find({ where: { travelroute_id: travelRoute.id } });
+  const detailTravels = await this.detailTravelRepository.find({ where: { travelrouteId: travelRoute.id } });
 
   // 새 travelRoute에 맞게 detailtravel 데이터 복제
   for (const detailTravel of detailTravels) {
     const newDetailTravel = this.detailTravelRepository.create({
-      travelroute_id: savedTravelRoute.id,  // 새로운 travelroute_id
-      place_id: detailTravel.place_id,
+      travelrouteId: savedTravelRoute.id,  // 새로운 travelroute_id
+      placeId: detailTravel.placeId,
       routeIndex: detailTravel.routeIndex,  // 'count'를 'routeIndex'로 수정
-      region_id: detailTravel.region_id,
+      regionId: detailTravel.regionId,
       date: detailTravel.date,
       contents: detailTravel.contents,
       transportOption: detailTravel.transportOption,  // 'traffic_info'를 'transportOption'으로 수정
@@ -383,13 +383,13 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
     userId: number,
   ): Promise<any> {
     try {
-      const { travel_name, travelroute_range, transportOption, detailRoute } = createTravelRouteDto;
+      const { travelName, travelrouteRange, transportOption, detailRoute } = createTravelRouteDto;
   
       // 새로운 TravelRoute 생성
       const newTravelRoute = this.travelRouteRepository.create({
-        user_id: userId,
-        travel_name,
-        travelroute_range,
+        userId: userId,
+        travelName,
+        travelrouteRange,
       });
   
       // TravelRoute 저장
@@ -410,10 +410,10 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
           }
   
           const detailTravel = this.detailTravelRepository.create({
-            travelroute_id: savedTravelRoute.id,
-            place_id: place.id,
+            travelrouteId: savedTravelRoute.id,
+            placeId: place.id,
             routeIndex: detail.routeIndex,
-            region_id: place.regionId,
+            regionId: place.regionId,
             date: new Date(detail.date),
             contents: null,
             transportOption: transportOption,

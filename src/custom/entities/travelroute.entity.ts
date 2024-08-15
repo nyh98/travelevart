@@ -11,25 +11,25 @@ export class TravelRoute {
   id: number;
 
   @Column()
-  user_id: number;
+  userId: number;
   
   @Column()
-  travel_name: string;
+  travelName: string;
   
   @Column({
     type: 'tinyint',
     default: 0,
   })
-  travelroute_range: number;
+  travelrouteRange: number;
 
   @Column({type: 'date'})
-  start_date: Date;
+  startDate: Date;
   
   @Column({type: 'date'})
-  end_date: Date;
+  endDate: Date;
 
   @ManyToOne(() => User, (user) => user.travelRoutes)
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @OneToMany(() => DetailTravel, (detailTravel) => detailTravel.travelRoute)
