@@ -50,15 +50,15 @@ export class DetailTravel {
   mapLink: string;
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.detailTravels, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'travelroute_id' })
+  @JoinColumn({ name: 'travelrouteId' })
   travelRoute: TravelRoute;
 
   @ManyToOne(() => Place, (place) => place.detailTravel)
-  @JoinColumn({ name: 'place_id' })
+  @JoinColumn({ name: 'placeId' })
   place: Place;
 
   @ManyToOne(() => Region, (region) => region.detailTravels)
-  @JoinColumn({ name: 'region_id' })
+  @JoinColumn({ name: 'regionId' })
   region: Region;
 
   @OneToMany(() => Diary, (diary) => diary.detailTravel)
