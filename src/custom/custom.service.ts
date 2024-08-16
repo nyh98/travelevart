@@ -244,12 +244,34 @@ async updateDetailTravel(
 
 // TravelRoute 조회
 async getTravelRoute(userId: number): Promise<any> {
-  const travelRoutes = await this.travelRouteRepository.find({ where: { userId: userId }});
+  const travelRoutes = await this.travelRouteRepository.find({
+    where: { userId: userId },
+    relations: ['detailTravels'], // detailTravels를 함께 로드합니다.
+  });
+
   if (!travelRoutes || travelRoutes.length === 0) {
-      throw new NotFoundException('해당 사용자의 여행 경로를 찾을 수 없습니다.');
+    throw new NotFoundException('해당 사용자의 여행 경로를 찾을 수 없습니다.');
   }
-  return travelRoutes;
+
+  // travelRoutes에 첫 번째 detailTravel의 placeId와 detailtravelImage를 추가합니다.
+  const result = travelRoutes.map(route => {
+    const firstDetailTravel = route.detailTravels.length > 0 ? route.detailTravels[0] : null;
+    return {
+      id: route.id,
+      userId: route.userId,
+      travelName: route.travelName,
+      travelrouteRange: route.travelrouteRange,
+      startDate: route.startDate,
+      endDate: route.endDate,
+      detailtravelImage: firstDetailTravel ? firstDetailTravel.placeImage : null,
+    };
+  });
+
+  return result;
 }
+
+
+
 
 
 // DetailTravel 조회
