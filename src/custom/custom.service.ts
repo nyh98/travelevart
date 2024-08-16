@@ -122,53 +122,78 @@ async updateTravelRoute(
   updateTravelRouteDto: {
     travelName?: string;
     travelrouteRange?: number;
-    startDate?: Date;
-    endDate?: Date;
+    startDate?: Date | string;
+    endDate?: Date | string;
     transportOption?: string;
   }
 ): Promise<any> {
-  // 주어진 travelrouteId에 해당하는 TravelRoute 조회
+  // console.log(travelrouteId)
   const travelRoute = await this.travelRouteRepository.findOne({
     where: { id: travelrouteId },
-    relations: ['detailTravels'], // 연관된 DetailTravel도 가져오기
+    relations: ['detailTravels'],
   });
 
   if (!travelRoute) {
     throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
+  
+  const originalStartDate = new Date(travelRoute.startDate);
+  const originalEndDate = new Date(travelRoute.endDate);
 
-  const originalStartDate = travelRoute.startDate;
-  const originalEndDate = travelRoute.endDate;
+  // DTO에서 전달된 startDate와 endDate를 Date 객체로 변환
+  const newStartDate = updateTravelRouteDto.startDate ? new Date(updateTravelRouteDto.startDate) : null;
+  const newEndDate = updateTravelRouteDto.endDate ? new Date(updateTravelRouteDto.endDate) : null;
 
-  // TravelRoute 정보 업데이트
   travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
   travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
-  travelRoute.startDate = updateTravelRouteDto.startDate || travelRoute.startDate;
-  travelRoute.endDate = updateTravelRouteDto.endDate || travelRoute.endDate;
+  travelRoute.startDate = newStartDate || travelRoute.startDate;
+  travelRoute.endDate = newEndDate || travelRoute.endDate;
 
-  // startDate가 변경된 경우, 새로운 날짜에 대한 DetailTravel 생성
-  if (updateTravelRouteDto.startDate && updateTravelRouteDto.startDate < originalStartDate) {
-    await this.createBasicDetailTravelForNewDates(
-      travelrouteId,
-      updateTravelRouteDto.startDate,
-      originalStartDate,
-      updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
-    );
+  if (newStartDate && newStartDate !== originalStartDate) {
+    if (newStartDate > originalStartDate) {
+      // console.log(travelrouteId)
+      await this.detailTravelRepository.delete({
+        travelrouteId,
+        date: Between(
+          originalStartDate,
+          new Date(newStartDate.getTime() - 86400000) // 1일을 빼서 새로운 Date 객체 생성
+        ),
+      });
+    } else if (newStartDate < originalStartDate) {
+      await this.createBasicDetailTravelForNewDates(
+        travelrouteId,
+        newStartDate,
+        new Date(originalStartDate.getTime() - 86400000), // 1일을 빼서 새로운 Date 객체 생성
+        updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
+      );
+    }
   }
 
-  // endDate가 변경된 경우, 새로운 날짜에 대한 DetailTravel 생성
-  if (updateTravelRouteDto.endDate && updateTravelRouteDto.endDate > originalEndDate) {
-    await this.createBasicDetailTravelForNewDates(
-      travelrouteId,
-      originalEndDate,
-      updateTravelRouteDto.endDate,
-      updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
-    );
+  if (newEndDate && newEndDate !== originalEndDate) {
+    if (newEndDate < originalEndDate) {
+      // console.log(travelrouteId)
+      await this.detailTravelRepository.delete({
+        travelrouteId,
+        date: Between(
+          new Date(newEndDate.getTime() + 86400000), // 1일을 더해서 새로운 Date 객체 생성
+          originalEndDate
+        ),
+      });
+    } else if (newEndDate > originalEndDate) {
+      // console.log(travelrouteId)
+      await this.createBasicDetailTravelForNewDates(
+        travelrouteId,
+        new Date(originalEndDate.getTime() + 86400000), // 1일을 더해서 새로운 Date 객체 생성
+        newEndDate,
+        updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
+      );
+    }
   }
 
-  // 업데이트된 TravelRoute 저장
   return this.travelRouteRepository.save(travelRoute);
 }
+
+
 
 // 새로운 날짜에 대한 DetailTravel 기본 정보 생성
 private async createBasicDetailTravelForNewDates(
@@ -177,6 +202,7 @@ private async createBasicDetailTravelForNewDates(
   endDate: Date,
   transportOption: string
 ) {
+  // console.log(travelrouteId)
   let currentDate = new Date(startDate);
 
   // 날짜를 하나씩 증가시키며 반복
@@ -193,6 +219,7 @@ private async createBasicDetailTravelForNewDates(
       placeImage: '',
       routeIndex: null, // 기본값으로 null
     });
+    // console.log(travelrouteId)
 
     // 생성한 DetailTravel 저장
     await this.detailTravelRepository.save(newDetailTravel);
@@ -201,6 +228,7 @@ private async createBasicDetailTravelForNewDates(
     currentDate.setDate(currentDate.getDate() + 1);
   }
 }
+
 
 async updateDetailTravel(
   detailtravelId: number, 
@@ -256,6 +284,9 @@ async getTravelRoute(userId: number): Promise<any> {
   // travelRoutes에 첫 번째 detailTravel의 placeId와 detailtravelImage를 추가합니다.
   const result = travelRoutes.map(route => {
     const firstDetailTravel = route.detailTravels.length > 0 ? route.detailTravels[0] : null;
+    const detailtravelImage = firstDetailTravel 
+    ? (firstDetailTravel.placeImage && firstDetailTravel.placeImage.trim() !== "" ? firstDetailTravel.placeImage : null) 
+    : null;
     return {
       id: route.id,
       userId: route.userId,
@@ -263,15 +294,12 @@ async getTravelRoute(userId: number): Promise<any> {
       travelrouteRange: route.travelrouteRange,
       startDate: route.startDate,
       endDate: route.endDate,
-      detailtravelImage: firstDetailTravel ? firstDetailTravel.placeImage : null,
+      detailtravelImage: detailtravelImage,
     };
   });
 
   return result;
 }
-
-
-
 
 
 // DetailTravel 조회
@@ -321,10 +349,6 @@ async getDetailTravel(travelrouteId: number): Promise<any> {
     items: Object.values(groupedByDate)
   };
 }
-
-
-
-
 
 // TravelRoute 삭제
 async deleteTravelRoute(travelrouteId: number): Promise<void> {
