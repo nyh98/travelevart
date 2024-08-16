@@ -1,6 +1,6 @@
 import { Controller, Post, Patch, Body, Param, Req, Res, HttpStatus, HttpException, Get, Delete, Query } from '@nestjs/common';
 import { CreateTravelRouteDto } from './dto/create-travelroute.dto';
-import { CreateDetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
+import { DetailTravelDetailDto, DetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
 import { Request, Response } from 'express';
 import { TravelRouteService } from './custom.service';
 
@@ -54,6 +54,7 @@ export class TravelRouteController {
           if (error instanceof HttpException) {
               return res.status(error.getStatus()).json({ message: error.message });
           }
+          console.log(error);
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
       }
   }
@@ -61,10 +62,8 @@ export class TravelRouteController {
   // DetailTravel 수정
   @Patch(':detailtravelId/details')
   async updateDetailTravel(
-    // @Query('travelrouteId') travelrouteId: number,
-    // @Query('detailtravelId') detailtravelId: number,
     @Param('detailtravelId') detailtravelId: number,
-    @Body() detail: UpdateDetailTravelDto,
+    @Body() detail: DetailTravelDetailDto,
     @Req() req: Request,
     @Res() res: Response,
   ) {
@@ -79,6 +78,7 @@ export class TravelRouteController {
         if (error instanceof HttpException) {
               return res.status(error.getStatus()).json({ message: error.message });
             }
+            console.log(error);
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
         }
   }
@@ -101,6 +101,7 @@ export class TravelRouteController {
           if (error instanceof HttpException) {
             return res.status(error.getStatus()).json({ message: error.message });
           }
+          console.log(error)
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
       }
     }
