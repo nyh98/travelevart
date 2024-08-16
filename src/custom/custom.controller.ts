@@ -60,51 +60,58 @@ export class TravelRouteController {
   }
 
   // DetailTravel 수정
-  @Patch(':detailtravelId/details')
-  async updateDetailTravel(
-    @Param('detailtravelId') detailtravelId: number,
-    @Body() detail: DetailTravelDetailDto,
-    @Req() req: Request,
-    @Res() res: Response,
-  ) {
-      try {
-          const user = req.user;
-          if (!user) {
-              throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-          }
-          const result = await this.travelRouteService.updateDetailTravel(detailtravelId, detail);
-          return res.status(HttpStatus.OK).json(result);
-      } catch (error) {
-        if (error instanceof HttpException) {
-              return res.status(error.getStatus()).json({ message: error.message });
-            }
-            console.log(error);
-          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
-        }
+  @Patch(':travelrouteId/details')
+async updateDetailTravel(
+  @Param('travelrouteId') travelrouteId: number,
+  @Body() updateRequest: UpdateDetailTravelDto, // Create this DTO to match your request structure
+  @Req() req: Request,
+  @Res() res: Response,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+    }
+
+    // Call the service method to handle the update
+    const result = await this.travelRouteService.updateDetailTravels(travelrouteId, updateRequest);
+    return res.status(HttpStatus.OK).json(result);
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.getStatus()).json({ message: error.message });
+    }
+    console.log(error);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
   }
+}
+
 
   // TravelRoute 조회
   @Get(':userId')
-  async getTravelRoute(
-      @Param('userId') userId: number,
-      @Req() req: Request,
-      @Res() res: Response,
-  ) {
-    try {
-      const user = req.user;
-      if (!user) {
-        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-          }
-          const result = await this.travelRouteService.getTravelRoute(userId);
-          return res.status(HttpStatus.OK).json(result);
-        } catch (error) {
-          if (error instanceof HttpException) {
-            return res.status(error.getStatus()).json({ message: error.message });
-          }
-          console.log(error)
-          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
-      }
+async getTravelRoute(
+    @Param('userId') userId: number,
+    @Query('page') page: number, 
+    @Query('pageSize') pageSize: number,
+    @Req() req: Request,
+    @Res() res: Response,
+) {
+  try {
+    const user = req.user;
+    if (!user) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
+
+    const result = await this.travelRouteService.getTravelRoute(userId, page, pageSize);
+    return res.status(HttpStatus.OK).json(result);
+  } catch (error) {
+    if (error instanceof HttpException) {
+      return res.status(error.getStatus()).json({ message: error.message });
+    }
+    console.log(error);
+    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
+  }
+}
+
 
   // DetailTravel 조회
   @Get(':travelrouteId/details')
@@ -155,8 +162,6 @@ export class TravelRouteController {
   // DetailTravel 삭제
   @Delete(':detailtravelId/details')
   async deleteDetailTravel(
-    // @Query('travelrouteId') travelrouteId: number,
-    // @Query('detailtravelId') detailtravelId: number,
     @Param('detailtravelId') detailtravelId: number,
     @Req() req: Request,
     @Res() res: Response,
