@@ -128,21 +128,38 @@ export class AlertService {
 
       const postIds = userPosts.map(post => post.id);
 
+      const forkPosts = await this.forkRepository
+        .createQueryBuilder('fork')
+        .select('fork.travelroute_id')  // travelroute_id를 선택
+        .where('fork.user_id = :userId', { userId })
+        .getMany();
+
+      const forkIds = forkPosts.map(fork => fork.travelroute_id);
+
       if (postIds.length > 0) {
         // comment 테이블 업데이트
         await this.commentRepository.createQueryBuilder()
-          .update(Comment)
-          .set({ check: true })
-          .where('post_id IN (:...postIds) AND check = false', { postIds })
-          .execute();
+            .update(Comment)
+            .set({ check: true })
+            .where('post_id IN (:...postIds) AND check = false', { postIds })
+            .execute();
 
         // postlike 테이블 업데이트
         await this.postlikeRepository.createQueryBuilder()
-          .update(Postlike)
-          .set({ check: true })
-          .where('post_id IN (:...postIds) AND check = false', { postIds })
-          .execute();
-      }
+            .update(Postlike)
+            .set({ check: true })
+            .where('post_id IN (:...postIds) AND check = false', { postIds })
+            .execute();
+    }
+
+    if (forkIds.length > 0) {
+        // fork 테이블 업데이트
+        await this.forkRepository.createQueryBuilder()
+            .update(Fork)
+            .set({ check: true })
+            .where('travelroute_id IN (:...forkIds) AND check = false', { forkIds })
+            .execute();
+    }
 
       return { message: '알림이 확인되었습니다.' };
     } catch (error) {
