@@ -4,7 +4,7 @@ import { Between, Repository } from 'typeorm';
 import { TravelRoute } from './entities/travelroute.entity';
 import { DetailTravel } from './entities/detailtravel.entity';
 import { CreateTravelRouteDto } from './dto/create-travelroute.dto';
-import { CreateDetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
+import { DetailTravelDetailDto, DetailTravelItemDto, UpdateDetailTravelDto } from './dto/update-detailtravel.dto';
 import { User } from 'src/user/entities/user.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
@@ -116,9 +116,6 @@ export class TravelRouteService {
     return response;
   }
   
-  
-  
- // TravelRoute 수정
 // TravelRoute 수정
 async updateTravelRoute(
   travelrouteId: number,
@@ -130,10 +127,12 @@ async updateTravelRoute(
     transportOption?: string;
   }
 ): Promise<any> {
-  // 여행 경로가 존재하는지 확인
+  // 주어진 travelrouteId에 해당하는 TravelRoute 조회
   const travelRoute = await this.travelRouteRepository.findOne({
     where: { id: travelrouteId },
+    relations: ['detailTravels'], // 연관된 DetailTravel도 가져오기
   });
+
   if (!travelRoute) {
     throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
@@ -141,35 +140,33 @@ async updateTravelRoute(
   const originalStartDate = travelRoute.startDate;
   const originalEndDate = travelRoute.endDate;
 
-  // travelRoute 정보 업데이트
+  // TravelRoute 정보 업데이트
   travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
   travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
   travelRoute.startDate = updateTravelRouteDto.startDate || travelRoute.startDate;
   travelRoute.endDate = updateTravelRouteDto.endDate || travelRoute.endDate;
 
-  // start_date가 변경된 경우 처리
+  // startDate가 변경된 경우, 새로운 날짜에 대한 DetailTravel 생성
   if (updateTravelRouteDto.startDate && updateTravelRouteDto.startDate < originalStartDate) {
-    // 새 start_date 이전에 추가된 날짜에 대한 세부 여행 정보 생성
     await this.createBasicDetailTravelForNewDates(
       travelrouteId,
       updateTravelRouteDto.startDate,
       originalStartDate,
-      updateTravelRouteDto.transportOption
+      updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
     );
   }
 
-  // end_date가 변경된 경우 처리
+  // endDate가 변경된 경우, 새로운 날짜에 대한 DetailTravel 생성
   if (updateTravelRouteDto.endDate && updateTravelRouteDto.endDate > originalEndDate) {
-    // 새 end_date 이후에 추가된 날짜에 대한 세부 여행 정보 생성
     await this.createBasicDetailTravelForNewDates(
       travelrouteId,
       originalEndDate,
       updateTravelRouteDto.endDate,
-      updateTravelRouteDto.transportOption
+      updateTravelRouteDto.transportOption || travelRoute.detailTravels[0]?.transportOption || 'public'
     );
   }
 
-  // 업데이트된 여행 경로 저장
+  // 업데이트된 TravelRoute 저장
   return this.travelRouteRepository.save(travelRoute);
 }
 
@@ -180,53 +177,66 @@ private async createBasicDetailTravelForNewDates(
   endDate: Date,
   transportOption: string
 ) {
-  // startDate에서 endDate까지 반복하면서 새로운 날짜에 대한 기본 세부 여행 정보 생성
   let currentDate = new Date(startDate);
 
+  // 날짜를 하나씩 증가시키며 반복
   while (currentDate <= endDate) {
+    // DetailTravel 생성
     const newDetailTravel = this.detailTravelRepository.create({
       travelrouteId: travelrouteId,
-      date: new Date(currentDate),
-      transportOption: transportOption, // transport_option만 설정
+      date: currentDate,
+      transportOption: transportOption,
+      placeId: null,  // 기본값으로 null, 필요 시 이후 업데이트 가능
+      regionId: null, // 기본값으로 null, 필요 시 이후 업데이트 가능
+      address: '',
+      placeTitle: '',
+      placeImage: '',
+      routeIndex: null, // 기본값으로 null
     });
+
+    // 생성한 DetailTravel 저장
     await this.detailTravelRepository.save(newDetailTravel);
+
+    // 날짜 증가
     currentDate.setDate(currentDate.getDate() + 1);
   }
 }
 
-
-// DetailTravel 수정
 async updateDetailTravel(
-  detailtravelId: number,
-  updateDetailTravelDto: UpdateDetailTravelDto
+  detailtravelId: number, 
+  detail: DetailTravelDetailDto
 ): Promise<any> {
-  // 세부 여행 정보 조회
-  const detailTravel = await this.detailTravelRepository.findOne({
-    where: { id: detailtravelId },
-  });
+  
+  // Find the existing detail travel record by ID
+  const detailTravel = await this.detailTravelRepository.findOne({ where: { id: detailtravelId } });
   if (!detailTravel) {
     throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
   }
 
-  // DTO에 있는 항목을 detailTravel 엔티티에 업데이트
-  const detail = updateDetailTravelDto.items[0].details[0];
+  // If a new placeId is provided, fetch the associated place details
+  let place;
+  if (detail.placeId) {
+    place = await this.placeRepository.findOne({ where: { id: detail.placeId } });
+    if (!place) {
+      throw new NotFoundException(`Place with id ${detail.placeId} not found`);
+    }
+  }
 
-  detailTravel.routeIndex = detail.routeIndex || detailTravel.routeIndex;
-  detailTravel.contents = detail.contents || detailTravel.contents;
-  detailTravel.regionId = detail.regionId || detailTravel.regionId;
-  detailTravel.address = detail.address || detailTravel.address;
-  detailTravel.placeTitle = detail.placeTitle || detailTravel.placeTitle;
-  detailTravel.placeImage = detail.placeImage || detailTravel.placeImage;
-  detailTravel.mapLink = detail.mapLink || detailTravel.mapLink;
-  detailTravel.transportOption =
-    updateDetailTravelDto.transportOption || detailTravel.transportOption;
+  // Update the detail travel fields, either from the input or the existing values
+  detailTravel.routeIndex = detail.routeIndex ?? detailTravel.routeIndex;
+  detailTravel.contents = detail.contents ?? detailTravel.contents;
+  detailTravel.placeId = detail.placeId ?? detailTravel.placeId;
+  detailTravel.mapLink = detail.mapLink ?? detailTravel.mapLink;
 
-  // 날짜와 관련된 필드 업데이트
-  detailTravel.date = updateDetailTravelDto.items[0].date
-    ? new Date(updateDetailTravelDto.items[0].date)
-    : detailTravel.date;
+  // If a new placeId is provided, update the related fields
+  if (place) {
+    detailTravel.address = place.address;
+    detailTravel.placeImage = place.image;
+    detailTravel.placeTitle = place.title;
+    detailTravel.regionId = place.regionId;
+  }
 
-  // 업데이트된 세부 정보 저장
+  // Save the updated detail travel record
   return this.detailTravelRepository.save(detailTravel);
 }
 

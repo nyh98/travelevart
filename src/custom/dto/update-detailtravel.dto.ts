@@ -2,30 +2,60 @@ import { Type } from 'class-transformer';
 import { IsNumber, IsString, IsOptional, IsDate, ValidateNested, IsArray } from 'class-validator';
 
 export class UpdateDetailTravelDto {
+  @IsOptional()
   @IsString()
-  transportOption: string;  // 'public' 또는 'car'
+  transportOption?: string;  // 'public' 또는 'car'
 
+  @IsOptional()
   @IsArray()
-  items: {
-    date: Date; // 여행 날짜
-    details: {
-      placeId: number;
-      routeIndex: number;
-      contents: string;
-      regionId: number;
-      address: string;
-      placeTitle: string;
-      placeImage: string;
-      mapLink: string | null;
-    }[];
-  }[];
+  @ValidateNested({ each: true })
+  @Type(() => DetailTravelItemDto)
+  items?: DetailTravelItemDto[];
 }
 
-export class CreateDetailTravelItemDto {
+export class DetailTravelItemDto {
+  @IsOptional()
   @IsDate()
-  date: Date;
+  @Type(() => Date)
+  date?: Date; // 여행 날짜
 
+  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => UpdateDetailTravelDto)
-  details: UpdateDetailTravelDto[];
+  @Type(() => DetailTravelDetailDto)
+  details?: DetailTravelDetailDto[];
+}
+
+export class DetailTravelDetailDto {
+  @IsOptional()
+  @IsNumber()
+  placeId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  routeIndex?: number;
+
+  @IsOptional()
+  @IsString()
+  contents?: string;
+
+  @IsOptional()
+  @IsNumber()
+  regionId?: number;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  placeTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  placeImage?: string;
+
+  @IsOptional()
+  @IsString()
+  mapLink?: string | null;
 }
