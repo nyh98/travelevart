@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Comment } from 'src/comment/entities/comment.entity';
 import { Fork } from 'src/custom/entities/fork.entity';
+import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { Postlike } from 'src/post/entities/postlike.entity';
 import { User } from 'src/user/entities/user.entity';
@@ -19,7 +20,10 @@ export class AlertService {
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
     @InjectRepository(Fork)
-    private readonly forkRepository: Repository<Fork>
+    private readonly forkRepository: Repository<Fork>,
+    @InjectRepository(TravelRoute)
+    private readonly travelrouteRepository: Repository<TravelRoute>,
+
   ) {}
 
   async getAlert(userId: number) {
@@ -33,15 +37,17 @@ export class AlertService {
 
       const postIds = userPosts.map(post => post.id);
 
-      const forkPosts = await this.forkRepository
-        .createQueryBuilder('fork')
-        .select('fork.travelroute_id')  // travelroute_id를 선택
-        .where('fork.user_id = :userId', { userId })
-        .getMany();
+      const userTravelRoutes = await this.travelrouteRepository
+          .createQueryBuilder('travelroute')
+          .select('travelroute.id')
+          .where('travelroute.userId = :userId', { userId })
+          .getMany();
+        
+      const travelRouteIds = userTravelRoutes.map(route => route.id);
 
-      const forkIds = forkPosts.map(fork => fork.travelroute_id);
+      console.log(travelRouteIds);
 
-      if (postIds.length === 0 && forkIds.length === 0) {
+      if (postIds.length === 0 && travelRouteIds.length === 0) {
         return {
             alerts: [],
             alertsCount: 0,
@@ -86,7 +92,7 @@ export class AlertService {
           .getRawMany();
       }
 
-      if ( forkIds.length > 0 ) {
+      if ( travelRouteIds.length > 0 ) {
         // 포크 알림 쿼리
         forkAlerts = await this.forkRepository.createQueryBuilder('fork')
         .select([
@@ -99,7 +105,7 @@ export class AlertService {
         ])
         .leftJoin('fork.user', 'user')
         .leftJoin('fork.travelroute', 'travelroute')
-        .where('fork.travelroute_id IN (:...forkIds)', { forkIds })
+        .where('fork.travelroute_id IN (:...travelRouteIds)', { travelRouteIds })
         .andWhere('fork.check = false')
         .getRawMany();
       }
@@ -128,13 +134,13 @@ export class AlertService {
 
       const postIds = userPosts.map(post => post.id);
 
-      const forkPosts = await this.forkRepository
-        .createQueryBuilder('fork')
-        .select('fork.travelroute_id')  // travelroute_id를 선택
-        .where('fork.user_id = :userId', { userId })
+      const userTravelRoutes = await this.travelrouteRepository
+        .createQueryBuilder('travelroute')
+        .select('travelroute.id')
+        .where('travelroute.userId = :userId', { userId })
         .getMany();
 
-      const forkIds = forkPosts.map(fork => fork.travelroute_id);
+      const travelRouteIds = userTravelRoutes.map(route => route.id);
 
       if (postIds.length > 0) {
         // comment 테이블 업데이트
@@ -152,13 +158,13 @@ export class AlertService {
             .execute();
     }
 
-    if (forkIds.length > 0) {
+    if (travelRouteIds.length > 0) {
         // fork 테이블 업데이트
         await this.forkRepository.createQueryBuilder()
-            .update(Fork)
-            .set({ check: true })
-            .where('travelroute_id IN (:...forkIds) AND check = false', { forkIds })
-            .execute();
+          .delete()
+          .from(Fork)
+          .where('travelroute_id IN (:...travelRouteIds) AND check = false', { travelRouteIds })
+          .execute();
     }
 
       return { message: '알림이 확인되었습니다.' };

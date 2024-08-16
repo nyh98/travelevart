@@ -19,13 +19,13 @@ export class DetailTravel {
   @Column()
   travelrouteId: number;
 
-  @Column()
+  @Column({ nullable: true })
   placeId: number;
 
-  @Column()
+  @Column({ nullable: true })
   routeIndex: number;  // 기존 count 컬럼 대체
 
-  @Column()
+  @Column({ nullable: true })
   regionId: number;
 
   @Column({type: 'date'})
@@ -34,16 +34,16 @@ export class DetailTravel {
   @Column({ nullable: true })
   contents: string;
 
-  @Column()
+  @Column({ nullable: true })
   transportOption: string;
 
-  @Column()
+  @Column({ nullable: true })
   address: string;
 
-  @Column()
+  @Column({ nullable: true })
   placeTitle: string;
 
-  @Column()
+  @Column({ nullable: true })
   placeImage: string;
 
   @Column({ nullable: true })
