@@ -41,4 +41,7 @@ export class TravelRoute {
   @OneToMany(()=> Post, (post) => post.travelRoute)
   post: Post[];
 
+  @OneToMany(()=> Fork, (fork) => fork.travelroute)
+  fork: Fork[];
+
 }

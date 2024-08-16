@@ -313,7 +313,7 @@ async deleteDetailTravel(detailtravelId: number): Promise<void> {
   await this.detailTravelRepository.remove(detailTravel);
 }
 
-async forkPost(userId: number, postId: number): Promise<Fork> {
+async forkPost(userId: number, postId: number): Promise<any> {
   const post = await this.postRepository.findOne({ where: { id: postId }, relations: ['travelRoute'] });
   if (!post) {
     throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -324,24 +324,10 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
     throw new NotFoundException('사용자를 찾을 수 없습니다.');
   }
 
-  const existingFork = await this.forkRepository.findOne({ where: { user: { id: userId }, post: { id: postId } } });
-  if (existingFork) {
-    throw new ConflictException('이미 포크한 게시글입니다.');
-  }
-
   const travelRoute = post.travelRoute;
   if (!travelRoute) {
     throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
   }
-
-  // 포크 데이터 생성
-  const fork = this.forkRepository.create({ 
-    userId: userId, 
-    postId: postId,
-    forkedAt: new Date(), 
-  });
-
-  await this.forkRepository.save(fork);
 
   // 새로운 TravelRoute 데이터 생성
   const newTravelRoute = this.travelRouteRepository.create({
@@ -371,10 +357,8 @@ async forkPost(userId: number, postId: number): Promise<Fork> {
       mapLink: detailTravel.mapLink,
     });
 
-      await this.detailTravelRepository.save(newDetailTravel);
+    await this.detailTravelRepository.save(newDetailTravel);
   }
-
-  return fork;
 }
 
   // 추천 경로를 기준으로 커스텀

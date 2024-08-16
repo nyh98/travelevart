@@ -38,9 +38,6 @@ export class Post {
     @OneToMany(() => Comment, comment => comment.post)
     comment: Comment[];
 
-    @OneToMany(() => Fork, fork => fork.post)
-    forks: Fork[];
-
     @OneToMany(() => Postcontent, postContent => postContent.post)
     postContents: Postcontent[];
 

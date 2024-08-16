@@ -358,6 +358,7 @@ export class PostService implements OnModuleInit {
         message: "게시글 작성이 완료되었습니다."
       }
     } catch (error) {
+      console.log(error);
       throw new HttpException('삐빅 데이터베이스 쿼리 Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   } 

@@ -1,6 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { Post } from '../../post/entities/post.entity';
 import { TravelRoute } from './travelroute.entity';
 
 @Entity('fork')
@@ -9,20 +8,22 @@ export class Fork {
   id: number;
 
   @Column()
-  postId: number;
+  travelroute_id: number;
 
   @Column()
-  userId: number;
+  user_id: number;
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  forkedAt: Date;
+  created_at: Date;
+
+  @Column({ default: false })
+  check: boolean;
 
   @ManyToOne(() => User, user => user.forks)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Post, post => post.forks, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'post_id' })
-  post: Post;
-
+  @ManyToOne(() => TravelRoute, travelroute => travelroute.fork, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'travelroute_id'})
+  travelroute: TravelRoute;
 }
