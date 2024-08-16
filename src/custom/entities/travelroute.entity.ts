@@ -29,7 +29,7 @@ export class TravelRoute {
   endDate: Date;
 
   @ManyToOne(() => User, (user) => user.travelRoutes)
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @OneToMany(() => DetailTravel, (detailTravel) => detailTravel.travelRoute)
