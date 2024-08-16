@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsNumber, IsString, IsOptional, IsDate, ValidateNested, IsArray } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsDate, ValidateNested, IsArray, IsDateString } from 'class-validator';
 
 export class UpdateDetailTravelDto {
   @IsOptional()
@@ -15,9 +15,8 @@ export class UpdateDetailTravelDto {
 
 export class DetailTravelItemDto {
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  date?: Date; // 여행 날짜
+  @IsDateString()
+  date?: Date;
 
   @IsOptional()
   @IsArray()
@@ -46,6 +45,10 @@ export class DetailTravelDetailDto {
   @IsOptional()
   @IsString()
   address?: string;
+
+  @IsOptional()
+  @IsString()
+  detailtravelId?: number;
 
   @IsOptional()
   @IsString()
