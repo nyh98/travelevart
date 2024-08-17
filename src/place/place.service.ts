@@ -110,7 +110,6 @@ export class PlaceService {
     const result = await query.getRawAndEntities();
     const totalCount = await query.getCount();
 
-    console.log(result);
     const items = result.raw.map((place) => {
       return {
         id: place.place_id,
