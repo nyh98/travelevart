@@ -21,36 +21,50 @@ export class CartService {
     private userRepository: Repository<User>,
   ) {}
 
-  async addCart(placeId: string, userId: number): Promise<void> {
+  async addCart(placeId: string, userId: number): Promise<any> {
     const place = await this.placeRepository.findOne({
       where: { id: +placeId },
     });
     if (!place) {
       throw new NotFoundException('없는 장소 입니다.');
     }
-
+  
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException('없는 사용자 입니다.');
     }
-
+  
     const existingCartItem = await this.cartRepository.findOne({
       where: { place: { id: +placeId }, user: { id: userId } },
     });
     if (existingCartItem) {
       throw new ConflictException('이미 찜한 장소입니다.');
     }
-
+  
     const cartItem = new Cart();
     cartItem.place = place;
     cartItem.user = user;
-
+  
     try {
-      await this.cartRepository.save(cartItem);
+      const savedCartItem = await this.cartRepository.save(cartItem);
+  
+      // 성공적으로 저장된 장바구니 항목의 정보를 반환
+      return {
+        cartId: savedCartItem.cartId,
+        place: {
+          placeId: place.id,
+          address: place.address,
+          image: place.image,
+          title: place.title,
+          event: place.event,
+          region: place.region,
+        },
+      };
     } catch (error) {
       throw new InternalServerErrorException('찜하기 실패.');
     }
   }
+  
 
   async removeCart(placeId: string, userId: number) {
     const cartItem = await this.cartRepository.findOne({

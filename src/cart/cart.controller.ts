@@ -15,8 +15,8 @@ export class CartController {
     @Res() response
   ) {
     try {
-      await this.cartService.addCart(placeId, req.user.id);
-      return response.status(HttpStatus.OK).json({ message: '찜하기 성공' });
+      const result = await this.cartService.addCart(placeId, req.user.id);
+      return response.status(HttpStatus.OK).json(result);
     } catch (error) {
       if (error instanceof HttpException) {
         return response.status(error.getStatus()).json({ message: error.message });

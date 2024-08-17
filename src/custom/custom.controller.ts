@@ -234,7 +234,6 @@ async getTravelRoute(
       if (error instanceof HttpException) {
         return res.status(error.getStatus()).json({ message: error.message });
       }
-      console.log(error);
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
     }
   }
