@@ -10,11 +10,11 @@ import {
 export class UpdateDiaryDto {
   @IsOptional()
   @IsInt()
-  travelroute_id?: number;
+  travelrouteId?: number;
 
   @IsOptional()
   @IsInt()
-  detailtravel_id?: number;
+  detailtravelId?: number;
 
   @IsOptional()
   @IsString()
@@ -22,10 +22,10 @@ export class UpdateDiaryDto {
 
   @IsOptional()
   @IsIn([0, 1])
-  diary_range?: number;
+  diaryRange?: number;
 
-  @ValidateIf((o) => o.post_id !== undefined)
+  @ValidateIf((o) => o.postId !== undefined)
   @IsNumber()
   @IsOptional()
-  diary_id: number;
+  diaryId: number;
 }

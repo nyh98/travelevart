@@ -10,11 +10,11 @@ import {
 export class CreateDiaryDto {
   @IsNotEmpty()
   @IsInt()
-  travelroute_id: number;
+  travelrouteId: number;
 
   @IsNotEmpty()
   @IsInt()
-  detailtravel_id: number;
+  detailtravelId: number;
 
   @IsNotEmpty()
   @IsString()
@@ -22,5 +22,5 @@ export class CreateDiaryDto {
 
   @IsOptional()
   @IsIn([0, 1])
-  diary_range?: number;
+  diaryRange?: number;
 }
