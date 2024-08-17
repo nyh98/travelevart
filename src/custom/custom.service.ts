@@ -155,46 +155,64 @@ export class TravelRouteService {
     travelrouteId: number, 
     updateRequest: UpdateDetailTravelDto
   ): Promise<any> {
-
+  
     const { transportOption, items } = updateRequest;
-
+  
     for (const item of items) {
       const { date, details } = item;
-
+  
+      // 해당 날짜의 기존 detailTravels를 가져옵니다.
       const detailTravels = await this.detailTravelRepository.find({
         where: { travelrouteId, date },
       });
+  
+      // 날짜가 일치하는 일정이 없으면 빈 배열로 초기화합니다.
       if (!detailTravels || detailTravels.length === 0) {
         throw new NotFoundException(`해당 여행 경로 및 날짜 (${date})에 대한 정보 업서용.`);
       }
-
+  
       for (const detail of details) {
-        const detailTravel = detailTravels.find(dt => dt.routeIndex === detail.routeIndex);
-        if (detailTravel) {
-          if (detail.placeId) {
-            const place = await this.placeRepository.findOne({ where: { id: detail.placeId } });
-            if (!place) {
-              throw new NotFoundException(`id ${detail.placeId}인 곳 없어용`);
-            }
-            detailTravel.placeId = place.id;
-            detailTravel.address = place.address;
-            detailTravel.placeImage = place.image;
-            detailTravel.placeTitle = place.title;
-            detailTravel.regionId = place.regionId;
-          }
-
-          detailTravel.transportOption = transportOption;
-
-          detailTravel.contents = detail.contents ?? detailTravel.contents;
-          detailTravel.mapLink = detail.mapLink ?? detailTravel.mapLink;
-
-          await this.detailTravelRepository.save(detailTravel);
+        let detailTravel = detailTravels.find(dt => dt.routeIndex === detail.routeIndex);
+  
+        // 해당 routeIndex가 존재하지 않으면 새로운 일정을 추가합니다.
+        if (!detailTravel) {
+          detailTravel = this.detailTravelRepository.create({
+            travelrouteId,
+            routeIndex: detail.routeIndex,
+            date: new Date(date),
+            transportOption,
+            contents: detail.contents,
+            mapLink: detail.mapLink,
+          });
         }
+  
+        // 장소 정보가 제공된 경우
+        if (detail.placeId) {
+          const place = await this.placeRepository.findOne({ where: { id: detail.placeId } });
+          if (!place) {
+            throw new NotFoundException(`id ${detail.placeId}인 곳 없어용`);
+          }
+          detailTravel.placeId = place.id;
+          detailTravel.address = place.address;
+          detailTravel.placeImage = place.image;
+          detailTravel.placeTitle = place.title;
+          detailTravel.regionId = place.regionId;
+        }
+  
+        // transportOption 업데이트
+        detailTravel.transportOption = transportOption;
+  
+        // 나머지 필드 업데이트 (메모 및 지도 링크)
+        detailTravel.contents = detail.contents ?? detailTravel.contents;
+        detailTravel.mapLink = detail.mapLink ?? detailTravel.mapLink;
+  
+        await this.detailTravelRepository.save(detailTravel);
       }
     }
-
+  
     return { message: '성공' };
   }
+  
   async getTravelRoute(userId: number, page: number, pageSize: number): Promise<any> {
     const totalRoutesCount = await this.travelRouteRepository.count({
       where: { userId: userId },
