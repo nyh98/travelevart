@@ -230,13 +230,13 @@ export class TravelRouteService {
         detailtravelImage: detailtravelImage,
       };
     });
-    
+
     return {
       totalPage: totalPage,
+      currentPage: page,
       routes: result,
     };
   }
-  
   async getDetailTravel(travelrouteId: number): Promise<any> {
     const detailTravels = await this.detailTravelRepository.find({ where: { travelrouteId: travelrouteId } });
 
