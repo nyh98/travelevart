@@ -46,8 +46,8 @@ export class PlaceService {
         'place.viewCount AS viewCount',
       ])
       .addSelect('AVG(rating.ratingValue)', 'averageRating')
-      .addSelect('COUNT(rating.placeId)', 'reviewCount')
-      .addSelect('COUNT(cart.placeId)', 'saveCount')
+      .addSelect('COUNT(DISTINCT rating.id)', 'reviewCount')
+      .addSelect('COUNT(DISTINCT cart.cartId)', 'saveCount')
       .skip((searchOption.page - 1) * searchOption.limit)
       .take(searchOption.limit)
       .groupBy('place.id');
@@ -110,6 +110,7 @@ export class PlaceService {
     const result = await query.getRawAndEntities();
     const totalCount = await query.getCount();
 
+    console.log(result);
     const items = result.raw.map((place) => {
       return {
         id: place.place_id,
