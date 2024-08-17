@@ -338,11 +338,16 @@ export class TravelRouteService {
     try {
       const { travelName, travelrouteRange, transportOption, detailRoute } = createTravelRouteDto;
 
-      const newTravelRoute = this.travelRouteRepository.create({
-        userId: userId,
-        travelName,
-        travelrouteRange,
-      });
+      const startDate = new Date(detailRoute[0].date);
+    const endDate = new Date(detailRoute[detailRoute.length - 1].date);
+
+    const newTravelRoute = this.travelRouteRepository.create({
+      userId: userId,
+      travelName,
+      travelrouteRange,
+      startDate,
+      endDate,
+    });
   
       const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
       
@@ -372,15 +377,15 @@ export class TravelRouteService {
             placeImage: detail.placeImage,
             mapLink: detail.mapLink,
           });
-          console.log(detailTravel);
           return detailTravel;
         } catch (error) {
           console.error('Error while creating DetailTravel:', error);
           throw error;
         }
       }));
-      return savedTravelRoute;
-    } catch (error) {
+      await this.detailTravelRepository.save(detailTravelEntities);
+      return { message: '성공' };    
+      } catch (error) {
       console.error('Error in saveRecommendedRoute:', error);
       throw error; 
     }
