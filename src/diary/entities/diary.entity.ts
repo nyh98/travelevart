@@ -15,38 +15,38 @@ export class Diary {
   id: number;
 
   @Column()
-  user_id: number;
+  userId: number;
 
   @Column()
-  travelroute_id: number;
+  travelrouteId: number;
 
   @Column()
-  detailtravel_id: number;
+  detailtravelId: number;
 
   @Column({default: 0})
-  diary_image: string;
+  diaryImage: string;
 
   @ManyToOne(() => User, (user) => user.diaries)
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'userId' })
   user: User;
 
   @ManyToOne(() => DetailTravel, (detailTravel) => detailTravel.diaries)
-  @JoinColumn({ name: 'detailtravel_id' })
+  @JoinColumn({ name: 'detailtravelId' })
   detailTravel: DetailTravel;
 
   @ManyToOne(() => TravelRoute, (travelRoute) => travelRoute.diaries, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'travelroute_id' })
+  @JoinColumn({ name: 'travelrouteId' })
   travelRoute: TravelRoute;
 
   @Column('text')
   contents: string;
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  diary_time: Date;
+  diaryTime: Date;
 
   @Column({
     type: 'tinyint',
     default: 0,
   })
-  diary_range: number;
+  diaryRange: number;
 }

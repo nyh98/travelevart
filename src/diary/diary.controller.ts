@@ -10,11 +10,11 @@ export class DiaryController {
 
   @Get(':travelrouteId')
   async getDiaries(
-    @Param('travelrouteId', ParseIntPipe) travelroute_id: number,
+    @Param('travelrouteId', ParseIntPipe) travelrouteId: number,
     @Req() req: Request
   ) {
     try {
-      return await this.diaryService.getdiaries(travelroute_id, req.user.id);
+      return await this.diaryService.getdiaries(travelrouteId, req.user.id);
     } catch (error) {
       throw new HttpException(
         error.message || '서버 에러',
@@ -37,15 +37,15 @@ export class DiaryController {
 
   @Patch()
   async modifydiary(
-    @Query('travelrouteId') travelroute_id: number,
-    @Query('detailtravelId') detailtravel_id: number,
+    @Query('travelrouteId') travelrouteId: number,
+    @Query('detailtravelId') detailtravelId: number,
     @Body() updateDiaryDto: UpdateDiaryDto,
     @Req() req: Request
   ) {
     try {
       return await this.diaryService.modifydiary(
-        travelroute_id,
-        detailtravel_id,
+        travelrouteId,
+        detailtravelId,
         updateDiaryDto,
         req.user.id
       );
@@ -59,15 +59,15 @@ export class DiaryController {
 
   @Delete()
   async deletediary(
-    @Query('travelrouteId') travelroute_id: number,
-    @Query('detailtravelId') detailtravel_id: number,
+    @Query('travelrouteId') travelrouteId: number,
+    @Query('detailtravelId') detailtravelId: number,
     @Body() updateDiaryDto: UpdateDiaryDto,
     @Req() req: Request
   ) {
     try {
       return await this.diaryService.deletediary(
-        travelroute_id,
-        detailtravel_id,
+        travelrouteId,
+        detailtravelId,
         req.user.id
       );
     } catch (error) {

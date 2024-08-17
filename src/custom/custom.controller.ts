@@ -28,8 +28,6 @@ export class TravelRouteController {
     }
   }
 
-  
-  // TravelRoute 수정
   @Patch(':travelrouteId')
   async updateTravelRoute(
       @Param('travelrouteId') travelrouteId: number,
@@ -59,11 +57,10 @@ export class TravelRouteController {
       }
   }
 
-  // DetailTravel 수정
   @Patch(':travelrouteId/details')
 async updateDetailTravel(
   @Param('travelrouteId') travelrouteId: number,
-  @Body() updateRequest: UpdateDetailTravelDto, // Create this DTO to match your request structure
+  @Body() updateRequest: UpdateDetailTravelDto,
   @Req() req: Request,
   @Res() res: Response,
 ) {
@@ -72,8 +69,6 @@ async updateDetailTravel(
     if (!user) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
-
-    // Call the service method to handle the update
     const result = await this.travelRouteService.updateDetailTravels(travelrouteId, updateRequest);
     return res.status(HttpStatus.OK).json(result);
   } catch (error) {
@@ -85,8 +80,6 @@ async updateDetailTravel(
   }
 }
 
-
-  // TravelRoute 조회
   @Get(':userId')
 async getTravelRoute(
     @Param('userId') userId: number,
@@ -112,8 +105,6 @@ async getTravelRoute(
   }
 }
 
-
-  // DetailTravel 조회
   @Get(':travelrouteId/details')
   async getDetailTravel(
     @Param('travelrouteId') travelrouteId: number,
@@ -136,7 +127,6 @@ async getTravelRoute(
       }
   }
 
-  // TravelRoute 삭제
   @Delete(':travelrouteId')
   async deleteTravelRoute(
       @Param('travelrouteId') travelrouteId: number,
@@ -159,7 +149,6 @@ async getTravelRoute(
         }
   }
 
-  // DetailTravel 삭제
   @Delete(':detailtravelId/details')
   async deleteDetailTravel(
     @Param('detailtravelId') detailtravelId: number,
@@ -197,7 +186,6 @@ async getTravelRoute(
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: '서버 에러' });
     }
   }
-
   
   @Post('recommendations')
   async saveRecommendedRoute(

@@ -14,20 +14,20 @@ export class DiaryService {
     private diaryRepository: Repository<Diary>,
   ) {}
 
-  async getdiaries(travelroute_id: number, userId: number) {
+  async getdiaries(travelrouteId: number, userId: number) {
     try{
       const diaries = await this.diaryRepository.find({
-        where: { travelRoute: { id: travelroute_id }, user: { id: userId } },
+        where: { travelRoute: { id: travelrouteId }, user: { id: userId } },
         relations: ['detailTravel'],
       });
   
       return {
-        travelroute_id,
+        travelrouteId,
         details: diaries.map(diary => ({
-          diary_id: diary.id,
-          detailtravel_id: diary.detailTravel.id,
+          diaryId: diary.id,
+          detailtravelId: diary.detailTravel.id,
           contents: diary.contents,
-          diary_time: diary.diary_time,
+          diaryIime: diary.diaryTime,
         })),
       };
     }catch(error){
@@ -40,7 +40,7 @@ export class DiaryService {
       const diary = this.diaryRepository.create({
         ...createDiaryDto,
         user: { id: userId },
-        diary_time: new Date(),
+        diaryTime: new Date(),
       });
       return this.diaryRepository.save(diary);
     }
@@ -50,21 +50,21 @@ export class DiaryService {
   }
 
   async modifydiary(
-    travelroute_id: number,
-    detailtravel_id: number,
+    travelrouteId: number,
+    detailtravelId: number,
     updateDiaryDto: UpdateDiaryDto,
     userId: number
   ): Promise<Diary> {
     try {
     const diary = await this.diaryRepository.findOne({
       where: {
-        travelRoute: { id: travelroute_id },
-        detailTravel: { id: detailtravel_id },
+        travelRoute: { id: travelrouteId },
+        detailTravel: { id: detailtravelId },
         user: { id: userId }
       }
     });
     diary.contents = updateDiaryDto.contents;
-    diary.diary_range = updateDiaryDto.diary_range;
+    diary.diaryRange = updateDiaryDto.diaryRange;
     
     return this.diaryRepository.save(diary);
   }catch (error) {
@@ -73,15 +73,15 @@ export class DiaryService {
 }
 
   async deletediary(
-    travelroute_id: number,
-    detailtravel_id: number,
+    travelrouteId: number,
+    detailtravelId: number,
     userId: number
   ){
     try {
     const diary = await this.diaryRepository.findOne({
       where: {
-        travelRoute: { id: travelroute_id },
-        detailTravel: { id: detailtravel_id },
+        travelRoute: { id: travelrouteId },
+        detailTravel: { id: detailtravelId },
         user: { id: userId }
       }
     });
