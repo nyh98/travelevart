@@ -5,7 +5,7 @@ import { User } from 'src/user/entities/user.entity';
 @Entity('cart')
 export class Cart {
   @PrimaryGeneratedColumn()
-  cart_id: number;
+  cartId: number;
 
   @ManyToOne(() => Place, place => place.carts, { eager: true })
   @JoinColumn({ name: 'placeId' })

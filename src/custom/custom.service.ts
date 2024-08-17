@@ -141,7 +141,6 @@ export class TravelRouteService {
     travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
     travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
 
-    // Route 업데이트
     const updateTravelRoute = this.travelRouteRepository.create({
       id: travelrouteId,
       travelName: updateTravelRouteDto.travelName,
@@ -241,7 +240,7 @@ export class TravelRouteService {
         throw new Error('유효하지 않은 날짜 형식이 포함되어 있습니다.');
       }
       
-      const dateKey = date.toISOString().split('T')[0]; // 날짜를 'YYYY-MM-DD' 형식으로 변환
+      const dateKey = date.toISOString().split('T')[0]; 
 
       if (!acc[dateKey]) {
         acc[dateKey] = {
@@ -266,7 +265,7 @@ export class TravelRouteService {
       return acc;
     }, {});
 
-    const transportOption = detailTravels.length > 0 ? detailTravels[0].transportOption : 'public'; // 첫 번째 여행 정보의 교통 수단 옵션을 사용
+    const transportOption = detailTravels.length > 0 ? detailTravels[0].transportOption : 'public'; 
 
     return {
       transportOption: transportOption,
