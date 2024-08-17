@@ -196,6 +196,10 @@ export class TravelRouteService {
     return { message: '성공' };
   }
   async getTravelRoute(userId: number, page: number, pageSize: number): Promise<any> {
+    const totalRoutesCount = await this.travelRouteRepository.count({
+      where: { userId: userId },
+    });
+
     const travelRoutes = await this.travelRouteRepository.find({
       where: { userId: userId },
       relations: ['detailTravels'], 
@@ -203,16 +207,19 @@ export class TravelRouteService {
       skip: (page - 1) * pageSize,  
       take: pageSize,  
     });
-
+  
     if (!travelRoutes || travelRoutes.length === 0) {
       throw new NotFoundException('해당 사용자의 여행 경로를 찾을 수 없습니다.');
     }
 
+    const totalPage = Math.ceil(totalRoutesCount / pageSize);
+  
     const result = travelRoutes.map(route => {
       const firstDetailTravel = route.detailTravels.length > 0 ? route.detailTravels[0] : null;
       const detailtravelImage = firstDetailTravel 
-      ? (firstDetailTravel.placeImage && firstDetailTravel.placeImage.trim() !== "" ? firstDetailTravel.placeImage : null) 
-      : null;
+        ? (firstDetailTravel.placeImage && firstDetailTravel.placeImage.trim() !== "" ? firstDetailTravel.placeImage : null) 
+        : null;
+      
       return {
         id: route.id,
         userId: route.userId,
@@ -223,9 +230,13 @@ export class TravelRouteService {
         detailtravelImage: detailtravelImage,
       };
     });
-
-    return result;
+    
+    return {
+      totalPage: totalPage,
+      routes: result,
+    };
   }
+  
   async getDetailTravel(travelrouteId: number): Promise<any> {
     const detailTravels = await this.detailTravelRepository.find({ where: { travelrouteId: travelrouteId } });
 
