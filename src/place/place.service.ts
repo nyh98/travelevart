@@ -18,6 +18,7 @@ import { GptService } from 'src/gpt/gpt.service';
 import { Region } from './entities/region.entity';
 import { CreateOrUpdateRatingDto } from './dto/create-place.dto';
 import { CartService } from 'src/cart/cart.service';
+import { Cart } from 'src/cart/entities/cart.entity';
 
 @Injectable()
 export class PlaceService {
@@ -29,13 +30,34 @@ export class PlaceService {
     private GptService: GptService,
     @InjectRepository(Region) private regionRepository: Repository<Region>,
     private cartService: CartService,
+    @InjectRepository(Cart) private cartRepository: Repository<Cart>,
   ) {}
 
   async getPlaces(searchOption: SearchPlaceDto) {
+    const rating = this.ratingRepository
+      .createQueryBuilder()
+      .subQuery()
+      .select([
+        'rating.placeId AS placeId',
+        'AVG(rating.ratingValue) AS averageRating',
+        'COUNT(*) AS reviewCount',
+      ])
+      .from(PlaceRating, 'rating')
+      .groupBy('rating.placeId')
+      .getQuery();
+
+    const cartSave = this.cartRepository
+      .createQueryBuilder()
+      .subQuery()
+      .select(['cart.placeId AS placeId', 'COUNT(*) AS saveCount'])
+      .from(Cart, 'cart')
+      .groupBy('cart.placeId')
+      .getQuery();
+
     const query = this.placeRepository
       .createQueryBuilder('place')
-      .leftJoin('place.rating', 'rating')
-      .leftJoin('place.carts', 'cart')
+      .leftJoin(rating, 'rating', 'rating.placeId = place.id')
+      .leftJoin(cartSave, 'cart', 'cart.placeId = place.id')
       .select([
         'place.id',
         'place.address AS address',
@@ -44,13 +66,12 @@ export class PlaceService {
         'place.mapx AS mapx',
         'place.mapy AS mapy',
         'place.viewCount AS viewCount',
+        'rating.averageRating AS averageRating',
+        'rating.reviewCount AS reviewCount',
+        'cart.saveCount AS saveCount',
       ])
-      .addSelect('AVG(rating.ratingValue)', 'averageRating')
-      .addSelect('COUNT(DISTINCT rating.id)', 'reviewCount')
-      .addSelect('COUNT(DISTINCT cart.cartId)', 'saveCount')
       .skip((searchOption.page - 1) * searchOption.limit)
-      .take(searchOption.limit)
-      .groupBy('place.id');
+      .take(searchOption.limit);
 
     //지역 코드가 있을시
     if (searchOption.regionCode) {
