@@ -11,14 +11,21 @@ import {
   HttpStatus,
   ParseIntPipe,
   Req,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { GetPostsDto, PostPostsDto } from './dto/post.dto';
 import { PostService } from './post.service';
 import { Request } from 'express';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { S3Service } from 'src/s3/s3.service';
 
 @Controller('posts')
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private S3Service: S3Service,
+  ) {}
 
   // 게시글들 조회
   @Get()
@@ -75,11 +82,42 @@ export class PostController {
 
   // 게시글 작성
   @Post()
+  @UseInterceptors(FilesInterceptor('image'))
   async createPost(
+    @UploadedFiles() files: Express.Multer.File[],
     @Body() postPostsDto: PostPostsDto, 
     @Req() req: Request
   ) {
     try {
+      if (typeof postPostsDto.contents === 'string') {
+        postPostsDto.contents = JSON.parse(postPostsDto.contents);
+      }
+  
+      if (typeof postPostsDto.travelRoute_id === 'string') {
+        postPostsDto.travelRoute_id = parseInt(postPostsDto.travelRoute_id, 10);
+      }
+
+      if (postPostsDto.contents) {
+        postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {          
+
+          if (files && files[index]) {
+            const file = files[index];
+            
+            // 파일이 실제로 존재하면 S3에 업로드
+            if (file) {
+              const imageUrl = await this.S3Service.uploadSingleFile(file); // 파일을 S3에 업로드
+              content.image = imageUrl; // S3에서 반환된 URL을 image 필드에 설정
+            }
+          } else {
+            console.log("파일이 없습니다.");
+          }
+          
+          return content;
+        }));
+      } else {
+        console.log("contents가 비어 있습니다.");
+      }
+
       return await this.postService.createPost(postPostsDto, req.user.id);
     } catch (error) {
       throw new HttpException(
@@ -91,13 +129,44 @@ export class PostController {
 
   // 게시글 수정
   @Patch(':id')
+  @UseInterceptors(FilesInterceptor('image'))
   async modifyPost(
     @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Express.Multer.File[], 
     @Body() postPostsDto: PostPostsDto,
     @Req() req: Request
   ) {
     try {
+      if (typeof postPostsDto.contents === 'string') {
+        postPostsDto.contents = JSON.parse(postPostsDto.contents);
+      }
+  
+      if (typeof postPostsDto.travelRoute_id === 'string') {
+        postPostsDto.travelRoute_id = parseInt(postPostsDto.travelRoute_id, 10);
+      }
+
       postPostsDto.post_id = id;
+
+      // 기존 게시글의 이미지를 모두 삭제
+      const existingContents = await this.postService.getPostContentsByPostId(id);
+      for (const content of existingContents) {
+        if (content.contents_img) {
+          await this.S3Service.deleteFile(content.contents_img);
+        }
+      }
+      
+      // 
+      if (postPostsDto.contents) {
+        postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {
+          const file = files[index];
+          if (file) {
+            const imageUrl = await this.S3Service.uploadSingleFile(file); // 파일을 S3에 업로드
+            content.image = imageUrl; // S3에서 반환된 URL을 image 필드에 설정
+          }
+          return content;
+        }));
+      }
+
       return await this.postService.modifyPost(postPostsDto);
     } catch (error) {
       throw new HttpException(
@@ -110,6 +179,13 @@ export class PostController {
   @Delete(':id')
   async deletePost(@Param('id', ParseIntPipe) id: number) {
     try {
+      // 기존 게시글의 이미지를 모두 삭제
+      const existingContents = await this.postService.getPostContentsByPostId(id);
+      for (const content of existingContents) {
+        if (content.contents_img) {
+          await this.S3Service.deleteFile(content.contents_img);
+        }
+      }
       return await this.postService.deletePost(id);
     } catch (error) {
       throw new HttpException(
