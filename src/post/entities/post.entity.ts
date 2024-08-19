@@ -4,8 +4,6 @@ import { Postlike } from './postlike.entity'
 import { Comment } from '../../comment/entities/comment.entity'
 import { Postcontent } from "./postcontent.entity";
 import { TravelRoute } from "src/custom/entities/travelroute.entity";
-import { Fork } from "src/custom/entities/fork.entity";
-import { DetailTravel } from "src/custom/entities/detailtravel.entity";
 
 @Entity('post')
 @Index('idx_post_created_at', ['created_at'])

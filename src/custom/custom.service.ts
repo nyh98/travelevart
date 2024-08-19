@@ -9,7 +9,6 @@ import { User } from 'src/user/entities/user.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
 import { Post } from 'src/post/entities/post.entity';
-import { Fork } from './entities/fork.entity';
 
 
 @Injectable()
@@ -25,8 +24,6 @@ export class TravelRouteService {
     private placeRepository: Repository<Place>,
     @InjectRepository(Region)
     private regionRepository: Repository<Region>,
-    @InjectRepository(Fork)
-    private forkRepository: Repository<Fork>,
     @InjectRepository(Post)
     private postRepository: Repository<Post>,
   ) {}

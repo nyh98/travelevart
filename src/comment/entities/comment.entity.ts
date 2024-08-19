@@ -20,9 +20,6 @@ export class Comment {
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
-    @Column({ default: false, name: 'check' })
-    check: boolean;
-
     @ManyToOne(() => User, user => user.comment)
     @JoinColumn({ name: 'user_id' })
     user: User;
