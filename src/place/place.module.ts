@@ -11,10 +11,11 @@ import { AuthModule } from 'src/auth/auth.module';
 import { GptModule } from 'src/gpt/gpt.module';
 import { CartModule } from 'src/cart/cart.module';
 import { authOptionMiddleware } from 'src/auth/auth-option.middleware';
+import { Cart } from 'src/cart/entities/cart.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Place, Region, PlaceRating]),
+    TypeOrmModule.forFeature([Place, Region, PlaceRating, Cart]),
     HttpModule,
     AuthModule,
     GptModule,
