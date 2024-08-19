@@ -36,12 +36,11 @@ export class PostPostsDto {
     @IsNotEmpty()
     title: string;
 
-    @ValidateNested({ each: true })
     @Type(() => CreatePostContentDto)
     @IsOptional()
     contents?: CreatePostContentDto[];
 
-    @IsNumber()
+    @IsNumberString()
     @IsOptional()
     travelRoute_id?: number;
 

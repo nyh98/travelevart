@@ -391,6 +391,10 @@ export class PostService implements OnModuleInit {
     }
   }
 
+  async getPostContentsByPostId(post_id: number): Promise<Postcontent[]> {
+    return await this.postcontentRepository.find({ where: { post_id } });
+  }
+
   async deletePost(id: number) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
