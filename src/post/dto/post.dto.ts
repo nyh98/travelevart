@@ -40,9 +40,9 @@ export class PostPostsDto {
     @IsOptional()
     contents?: CreatePostContentDto[];
 
-    @IsNumberString()
     @IsOptional()
-    travelRoute_id?: number;
+    @IsString()
+    travelRoute_id: string;
 
     @ValidateIf((o) => o.post_id !== undefined)
     @IsNumber()

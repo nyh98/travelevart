@@ -334,12 +334,16 @@ export class PostService implements OnModuleInit {
   async createPost(postPostsDto: PostPostsDto, user_id: number) {
     try {
       const { title, contents, travelRoute_id } = postPostsDto;
+      let travelRouteIdAsNumber = travelRoute_id ? parseInt(travelRoute_id, 10) : null;
+      if (isNaN(travelRouteIdAsNumber)) {
+        travelRouteIdAsNumber = null;
+      }
 
       // 새로운 게시물 생성
       const newPost = this.postRepository.create({
         user_id,
         title,
-        travelRoute_id
+        travelRoute_id : travelRouteIdAsNumber
       });
       const savePost = await this.postRepository.save(newPost);
 
@@ -370,8 +374,14 @@ export class PostService implements OnModuleInit {
       if (!post) {
         throw new HttpException('게시글이 존재하지 않습니다.', HttpStatus.NOT_FOUND);
       }
+
+      let travelRouteIdAsNumber = travelRoute_id ? parseInt(travelRoute_id, 10) : null;
+      if (isNaN(travelRouteIdAsNumber)) {
+        travelRouteIdAsNumber = null;
+      }
+
       post.title = title;
-      post.travelRoute_id = travelRoute_id;
+      post.travelRoute_id = travelRouteIdAsNumber;
 
       await this.postcontentRepository.delete({ post_id: post.id });
 

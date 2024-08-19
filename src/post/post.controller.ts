@@ -92,10 +92,6 @@ export class PostController {
       if (typeof postPostsDto.contents === 'string') {
         postPostsDto.contents = JSON.parse(postPostsDto.contents);
       }
-  
-      if (typeof postPostsDto.travelRoute_id === 'string') {
-        postPostsDto.travelRoute_id = parseInt(postPostsDto.travelRoute_id, 10);
-      }
 
       if (postPostsDto.contents) {
         postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {          
@@ -140,11 +136,7 @@ export class PostController {
       if (typeof postPostsDto.contents === 'string') {
         postPostsDto.contents = JSON.parse(postPostsDto.contents);
       }
-  
-      if (typeof postPostsDto.travelRoute_id === 'string') {
-        postPostsDto.travelRoute_id = parseInt(postPostsDto.travelRoute_id, 10);
-      }
-
+      
       postPostsDto.post_id = id;
 
       // 기존 게시글의 이미지를 모두 삭제
