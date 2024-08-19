@@ -6,7 +6,6 @@ import { Diary } from 'src/diary/entities/diary.entity';
 import { Cart } from 'src/cart/entities/cart.entity';
 import { PlaceRating } from 'src/place/entities/placeRating.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
-import { Fork } from 'src/custom/entities/fork.entity';
 
 @Entity('user')
 export class User {
@@ -48,9 +47,6 @@ export class User {
 
   @OneToMany(() => Cart, (cart) => cart.user)
   carts: Cart[];
-
-  @OneToMany(() => Fork, (fork) => fork.user)
-  forks: Fork[];
 
   @OneToMany(() => PlaceRating, (rating) => rating.user)
   placeRating: PlaceRating[];

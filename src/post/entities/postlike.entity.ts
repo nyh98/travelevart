@@ -12,10 +12,7 @@ export class Postlike {
 
     @Column()
     post_id: number;
-
-    @Column({ default: false })
-    check: boolean;
-
+    
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
