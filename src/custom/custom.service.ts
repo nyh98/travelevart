@@ -212,7 +212,6 @@ export class TravelRouteService {
   
     return { message: '성공' };
   }
-  
   async getTravelRoute(userId: number, page: number, pageSize: number): Promise<any> {
     const totalRoutesCount = await this.travelRouteRepository.count({
       where: { userId: userId },

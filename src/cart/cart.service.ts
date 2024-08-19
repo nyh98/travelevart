@@ -86,14 +86,18 @@ export class CartService {
       where: { user: { id: userId } },
       relations: ['place'],
     });
-
+  
     if (!cartItems.length) {
       return [];
     }
-
-    return cartItems.map((cartItem) => {
+  
+    return await Promise.all(cartItems.map(async (cartItem) => {
       const { cartId, place } = cartItem;
-
+  
+      const totalSaveCount = await this.getTotalSaveCount(place.id);
+  
+      const isSaved = Boolean(await this.isSaved(userId, place.id));
+  
       return {
         cartId,
         place: {
@@ -103,10 +107,13 @@ export class CartService {
           title: place.title,
           event: place.event,
           region: place.region,
+          totalSaveCount, 
+          isSaved, 
         },
       };
-    });
+    }));
   }
+  
 
   async getTotalSaveCount(placeId: number) {
     return this.cartRepository
