@@ -9,9 +9,10 @@ import { User } from 'src/user/entities/user.entity';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { Post } from 'src/post/entities/post.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
+import { Alert } from './entities/alert.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Postlike, Comment, User, Post, TravelRoute]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Alert, Postlike, Comment, User, Post, TravelRoute]), AuthModule],
   controllers: [AlertController],
   providers: [AlertService],
 })

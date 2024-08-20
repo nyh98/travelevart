@@ -1,6 +1,7 @@
+import { Alert } from "src/alert/entities/alert.entity";
 import { Post } from "src/post/entities/post.entity";
 import { User } from "src/user/entities/user.entity";
-import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('comment')
 @Index('idx_comment_post_id', ['post_id'])
@@ -27,4 +28,7 @@ export class Comment {
     @ManyToOne(() => Post, post => post.comment, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: Post;
+
+    @OneToMany(() => Alert, alert => alert.comment)
+    alert: Alert[];
 }

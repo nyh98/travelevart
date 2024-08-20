@@ -9,6 +9,7 @@ import { Comment } from 'src/comment/entities/comment.entity';
 import { RedisService } from 'src/redis/redis.service';
 import { Postcontent } from './entities/postcontent.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Injectable()
 export class PostService implements OnModuleInit {
@@ -27,6 +28,8 @@ export class PostService implements OnModuleInit {
     private readonly postcontentRepository: Repository<Postcontent>,
     @InjectRepository(TravelRoute)
     private readonly travelRouteRepository: Repository<TravelRoute>,
+    @InjectRepository(Alert)
+    private readonly alertRepository: Repository<Alert>,
   ) {}
 
   async onModuleInit() {
@@ -406,37 +409,15 @@ export class PostService implements OnModuleInit {
   }
 
   async deletePost(id: number) {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     try {
-      // post_contents 삭제
-      await queryRunner.manager.delete(Postcontent, { post_id: id });
-
-      // postlike 삭제
-      await queryRunner.manager.delete(Postlike, { post_id: id });
-
-      // comments 삭제
-      await queryRunner.manager.delete(Comment, { post_id: id });
-
-      // post_hashtag 삭제
-      // await queryRunner.manager.delete(PostHashtag, { post_id: id });
-
-      // post 삭제
-      const result = await queryRunner.manager.delete(Post, id);
+      const result = await this.dataSource.getRepository(Post).delete(id);
       if (result.affected === 0) {
         throw new HttpException('삭제 실패! 그런거없음!', HttpStatus.NOT_FOUND);
       }
-
-      await queryRunner.commitTransaction();
       return 'Success';
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       console.log(error.message);
       throw new HttpException('응 안돼~', HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await queryRunner.release();
     }
   }
 
@@ -458,9 +439,22 @@ export class PostService implements OnModuleInit {
       }
   
       const like = this.likeRepository.create({ user_id: user.id, post_id: post.id });
-      return await this.likeRepository.save(like);
-  
+      const saveedLike = await this.likeRepository.save(like);
+
+      // if 소켓에 연결 되어 있지 않다면,
+      // {}
+      // else 
+      // 알림 생성 로직 추가
+      const alert = this.alertRepository.create({
+        rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
+        send_user_id: user_id,  // 좋아요한 사용자를 알림의 발신자로 설정
+        type: 'like',  // 알림 타입을 'like'로 설정
+        postlike_id: saveedLike.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
+      });
+      await this.alertRepository.save(alert);
+      return "좋아요 추가"  
     } catch (error) {
+      console.log("좋아요 추가 에러 : ", error);
       throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }

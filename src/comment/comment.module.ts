@@ -7,9 +7,10 @@ import { AuthModule } from 'src/auth/auth.module';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Comment, User, Post]), AuthModule],
+  imports: [TypeOrmModule.forFeature([Comment, User, Post, Alert]), AuthModule],
   controllers: [CommentController],
   providers: [CommentService],
 })

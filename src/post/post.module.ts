@@ -12,9 +12,10 @@ import { RedisModule } from 'src/redis/redis.module';
 import { Postcontent } from './entities/postcontent.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 import { S3Module } from 'src/s3/s3.module';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Post, Postlike, User, Comment, Postcontent, TravelRoute]), S3Module, AuthModule, RedisModule],
+  imports: [TypeOrmModule.forFeature([Alert, Post, Postlike, User, Comment, Postcontent, TravelRoute]), S3Module, AuthModule, RedisModule],
   controllers: [PostController],
   providers: [PostService],
   exports: [PostService],
