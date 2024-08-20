@@ -12,6 +12,7 @@ import { Post } from 'src/post/entities/post.entity';
 import { Alert } from 'src/alert/entities/alert.entity';
 
 
+
 @Injectable()
 export class TravelRouteService {
   constructor(
@@ -122,91 +123,89 @@ export class TravelRouteService {
     return response;
   }
   async updateTravelRoute(
-    travelrouteId: number,
-    updateTravelRouteDto: {
-      travelName?: string;
-      travelrouteRange?: number;
-      startDate?: Date;
-      endDate?: Date;
-      transportOption?: string;
-    }
-  ): Promise<any> {
-    // 여행 경로를 가져옴
-    const travelRoute = await this.travelRouteRepository.findOne({
-      where: { id: travelrouteId },
-      relations: ['detailTravels'],
-    });
-  
-    if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
-    }
-  
-    const oldStartDate = new Date(travelRoute.startDate);
-    const newStartDate = updateTravelRouteDto.startDate ? new Date(updateTravelRouteDto.startDate) : oldStartDate;
-    const newEndDate = updateTravelRouteDto.endDate ? new Date(updateTravelRouteDto.endDate) : travelRoute.endDate;
-  
-    // 여행 경로 업데이트
-    travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
-    travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
-    travelRoute.startDate = newStartDate;
-    travelRoute.endDate = newEndDate;
-  
-    await this.travelRouteRepository.save(travelRoute);
-  
-    // 날짜가 변경된 경우 데이터 복사 및 삭제 로직 수행
-    if (newStartDate.getTime() !== oldStartDate.getTime()) {
-      // 1. 기존 데이터 복사 (빈 데이터는 제외)
-      for (const detail of travelRoute.detailTravels) {
-        if (detail.contents || detail.placeId || detail.transportOption) {
-          const newDetail = { ...detail, date: newStartDate };
-          await this.detailTravelRepository.save(newDetail);
-        }
-      }
-  
-      // 2. 기존 날짜 데이터 삭제
-      await this.detailTravelRepository.delete({
-        travelrouteId: travelRoute.id,
-        date: oldStartDate,
-      });
-    }
-  
-    // 새로운 빈 데이터 생성 (이전에 없는 경우에만)
-    const totalDays = this.calculateDaysDifference(newStartDate, newEndDate);
-  
-    for (let i = 1; i <= totalDays; i++) {
-      const date = new Date(newStartDate);
-      date.setDate(date.getDate() + i);
-  
-      // 해당 날짜에 데이터가 없을 경우에만 빈 데이터 추가
-      const existingDetail = await this.detailTravelRepository.findOne({
-        where: { travelrouteId: travelRoute.id, date },
-      });
-  
-      if (!existingDetail) {
-        const emptyDetailTravel = this.detailTravelRepository.create({
-          travelrouteId: travelRoute.id,
-          date,
-          transportOption: null,
-          contents: '', // 빈 메모
-          placeId: null,
-          routeIndex: null,
-          regionId: null,
-          address: null,
-          placeTitle: null,
-          placeImage: null,
-          mapLink: null,
-        });
-  
-        await this.detailTravelRepository.save(emptyDetailTravel);
-      }
-    }
-  
-    // 중복 데이터 삭제
-    await this.deleteDuplicateDetails(travelRoute.id, newStartDate, newEndDate);
-  
-    return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
+  travelrouteId: number,
+  updateTravelRouteDto: {
+    travelName?: string;
+    travelrouteRange?: number;
+    startDate?: Date;
+    endDate?: Date;
+    transportOption?: string;
   }
-  
+): Promise<any> {
+  // 여행 경로를 가져옴
+  const travelRoute = await this.travelRouteRepository.findOne({
+    where: { id: travelrouteId },
+    relations: ['detailTravels'],
+  });
+
+  if (!travelRoute) {
+    throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
+  }
+
+  const oldStartDate = new Date(travelRoute.startDate);
+  const newStartDate = updateTravelRouteDto.startDate ? new Date(updateTravelRouteDto.startDate) : oldStartDate;
+  const newEndDate = updateTravelRouteDto.endDate ? new Date(updateTravelRouteDto.endDate) : travelRoute.endDate;
+
+  // 여행 경로 업데이트
+  travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
+  travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
+  travelRoute.startDate = newStartDate;
+  travelRoute.endDate = newEndDate;
+
+  await this.travelRouteRepository.save(travelRoute);
+
+  // 첫 번째 수정인 경우
+  if (newStartDate.getTime() !== oldStartDate.getTime()) {
+    // 기존 detailTravel 데이터를 새로운 startDate로 복제하고 기존 데이터를 삭제
+    for (const detail of travelRoute.detailTravels) {
+      const newDetail = { ...detail, date: newStartDate };
+      await this.detailTravelRepository.save(newDetail);
+    }
+
+    // 이전 startDate의 데이터 삭제
+    await this.detailTravelRepository.delete({
+      travelrouteId: travelRoute.id,
+      date: oldStartDate,
+    });
+  }
+
+  // 빈 일정 생성 로직
+  const totalDays = this.calculateDaysDifference(newStartDate, newEndDate);
+
+  for (let i = 1; i <= totalDays; i++) {
+    const date = new Date(newStartDate);
+    date.setDate(date.getDate() + i);
+
+    // 해당 날짜에 데이터가 없을 경우에만 빈 데이터 추가
+    const existingDetail = await this.detailTravelRepository.findOne({
+      where: { travelrouteId: travelRoute.id, date },
+    });
+
+    if (!existingDetail) {
+      const emptyDetailTravel = this.detailTravelRepository.create({
+        travelrouteId: travelRoute.id,
+        date,
+        transportOption: null,
+        contents: '', // 빈 메모
+        placeId: null,
+        routeIndex: null,
+        regionId: null,
+        address: null,
+        placeTitle: null,
+        placeImage: null,
+        mapLink: null,
+      });
+
+      await this.detailTravelRepository.save(emptyDetailTravel);
+    }
+  }
+
+  // 중복 데이터 삭제
+  await this.deleteDuplicateDetails(travelRoute.id, newStartDate, newEndDate);
+
+  return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
+}
+
   
   // 날짜 차이를 계산하는 함수
   private calculateDaysDifference(startDate: Date, endDate: Date): number {
