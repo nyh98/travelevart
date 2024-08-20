@@ -128,26 +128,126 @@ export class TravelRouteService {
       transportOption?: string;
     }
   ): Promise<any> {
+    // 여행 경로를 가져옴
     const travelRoute = await this.travelRouteRepository.findOne({
       where: { id: travelrouteId },
+      relations: ['detailTravels'],
     });
-
+  
     if (!travelRoute) {
       throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
     }
+  
+    const oldStartDate = new Date(travelRoute.startDate);
+    const newStartDate = updateTravelRouteDto.startDate ? new Date(updateTravelRouteDto.startDate) : oldStartDate;
+    const newEndDate = updateTravelRouteDto.endDate ? new Date(updateTravelRouteDto.endDate) : travelRoute.endDate;
+  
+    // 여행 경로 업데이트
     travelRoute.travelName = updateTravelRouteDto.travelName || travelRoute.travelName;
     travelRoute.travelrouteRange = updateTravelRouteDto.travelrouteRange || travelRoute.travelrouteRange;
-
-    const updateTravelRoute = this.travelRouteRepository.create({
-      id: travelrouteId,
-      travelName: updateTravelRouteDto.travelName,
-      travelrouteRange: updateTravelRouteDto.travelrouteRange,
-      startDate: travelRoute.startDate, 
-      endDate: travelRoute.endDate,      
-    });
-
-    return this.travelRouteRepository.save(updateTravelRoute);
+    travelRoute.startDate = newStartDate;
+    travelRoute.endDate = newEndDate;
+  
+    await this.travelRouteRepository.save(travelRoute);
+  
+    // 날짜가 변경된 경우 데이터 복사 및 삭제 로직 수행
+    if (newStartDate.getTime() !== oldStartDate.getTime()) {
+      // 1. 기존 데이터 복사 (빈 데이터는 제외)
+      for (const detail of travelRoute.detailTravels) {
+        if (detail.contents || detail.placeId || detail.transportOption) {
+          const newDetail = { ...detail, date: newStartDate };
+          await this.detailTravelRepository.save(newDetail);
+        }
+      }
+  
+      // 2. 기존 날짜 데이터 삭제
+      await this.detailTravelRepository.delete({
+        travelrouteId: travelRoute.id,
+        date: oldStartDate,
+      });
+    }
+  
+    // 새로운 빈 데이터 생성 (이전에 없는 경우에만)
+    const totalDays = this.calculateDaysDifference(newStartDate, newEndDate);
+  
+    for (let i = 1; i <= totalDays; i++) {
+      const date = new Date(newStartDate);
+      date.setDate(date.getDate() + i);
+  
+      // 해당 날짜에 데이터가 없을 경우에만 빈 데이터 추가
+      const existingDetail = await this.detailTravelRepository.findOne({
+        where: { travelrouteId: travelRoute.id, date },
+      });
+  
+      if (!existingDetail) {
+        const emptyDetailTravel = this.detailTravelRepository.create({
+          travelrouteId: travelRoute.id,
+          date,
+          transportOption: null,
+          contents: '', // 빈 메모
+          placeId: null,
+          routeIndex: null,
+          regionId: null,
+          address: null,
+          placeTitle: null,
+          placeImage: null,
+          mapLink: null,
+        });
+  
+        await this.detailTravelRepository.save(emptyDetailTravel);
+      }
+    }
+  
+    // 중복 데이터 삭제
+    await this.deleteDuplicateDetails(travelRoute.id, newStartDate, newEndDate);
+  
+    return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
   }
+  
+  
+  // 날짜 차이를 계산하는 함수
+  private calculateDaysDifference(startDate: Date, endDate: Date): number {
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  }
+  
+  // 중복 데이터를 삭제하는 함수
+  private async deleteDuplicateDetails(travelrouteId: number, startDate: Date, endDate: Date): Promise<void> {
+    // 중복된 날짜 목록을 가져옴
+    const duplicates = await this.detailTravelRepository
+      .createQueryBuilder("detailTravel")
+      .select("date")
+      .addSelect("COUNT(*)", "count")
+      .where("travelrouteId = :travelrouteId", { travelrouteId })
+      .andWhere("date >= :startDate", { startDate })
+      .andWhere("date <= :endDate", { endDate })
+      .groupBy("date")
+      .having("count > 1")
+      .getRawMany();
+  
+    // 중복된 날짜에 대한 데이터를 삭제, 단 id, date, travelrouteId가 있는 데이터는 제외
+    for (const duplicate of duplicates) {
+      await this.detailTravelRepository
+        .createQueryBuilder()
+        .delete()
+        .where("travelrouteId = :travelrouteId", { travelrouteId })
+        .andWhere("date = :date", { date: duplicate.date })
+        .andWhere("transportOption IS NULL")
+        .andWhere("contents = ''")
+        .andWhere("placeId IS NULL")
+        .andWhere("routeIndex IS NULL")
+        .andWhere("regionId IS NULL")
+        .andWhere("address IS NULL")
+        .andWhere("placeTitle IS NULL")
+        .andWhere("placeImage IS NULL")
+        .andWhere("mapLink IS NULL")
+        .execute();
+    }
+  }
+  
+  
+  
+
   async updateDetailTravels(
     travelrouteId: number, 
     updateRequest: UpdateDetailTravelDto
