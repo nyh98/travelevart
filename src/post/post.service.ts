@@ -445,13 +445,15 @@ export class PostService implements OnModuleInit {
       // {}
       // else 
       // 알림 생성 로직 추가
-      const alert = this.alertRepository.create({
-        rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
-        send_user_id: user_id,  // 좋아요한 사용자를 알림의 발신자로 설정
-        type: 'like',  // 알림 타입을 'like'로 설정
-        postlike_id: saveedLike.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
-      });
-      await this.alertRepository.save(alert);
+      if (post.user_id != user_id) {
+        const alert = this.alertRepository.create({
+          rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
+          send_user_id: user_id,  // 좋아요한 사용자를 알림의 발신자로 설정
+          type: 'like',  // 알림 타입을 'like'로 설정
+          postlike_id: saveedLike.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
+        });
+        await this.alertRepository.save(alert);
+      }
       return "좋아요 추가"  
     } catch (error) {
       console.log("좋아요 추가 에러 : ", error);
