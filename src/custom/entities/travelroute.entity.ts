@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Diary } from '../../diary/entities/diary.entity';
 import { User } from 'src/user/entities/user.entity';
 import { DetailTravel } from './detailtravel.entity';
