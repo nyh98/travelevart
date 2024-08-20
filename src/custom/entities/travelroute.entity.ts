@@ -3,6 +3,7 @@ import { Diary } from '../../diary/entities/diary.entity';
 import { User } from 'src/user/entities/user.entity';
 import { DetailTravel } from './detailtravel.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Entity('travelroute')
 export class TravelRoute {
@@ -39,4 +40,7 @@ export class TravelRoute {
 
   @OneToMany(()=> Post, (post) => post.travelRoute)
   post: Post[];
+
+  @OneToMany(()=> Alert, (alert) => alert.travelRoute)
+  alert: Alert[];
 }

@@ -9,6 +9,7 @@ import { User } from 'src/user/entities/user.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 
 @Injectable()
@@ -26,6 +27,8 @@ export class TravelRouteService {
     private regionRepository: Repository<Region>,
     @InjectRepository(Post)
     private postRepository: Repository<Post>,
+    @InjectRepository(Alert)
+    private alertRepository: Repository<Alert>,
   ) {}
 
   async createTravelRoute(userId: number, createTravelRouteDto: CreateTravelRouteDto): Promise<TravelRoute> {
@@ -434,6 +437,20 @@ export class TravelRouteService {
     });
 
     const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
+
+    // --------------------성률 침범 영역---------------------
+    // if 소켓에 연결 되어 있지 않다면,
+    // {}
+    // else 
+    // 알림 생성 로직 추가
+    const alert = this.alertRepository.create({
+      rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
+      send_user_id: userId,  // 좋아요한 사용자를 알림의 발신자로 설정
+      type: 'fork',  // 알림 타입을 'like'로 설정
+      travelRoute_id: post.travelRoute.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
+    });
+    await this.alertRepository.save(alert);
+    // ------------------------------------------------------
 
     const detailTravels = await this.detailTravelRepository.find({ where: { travelrouteId: travelRoute.id } });
 
