@@ -6,6 +6,7 @@ import { Diary } from 'src/diary/entities/diary.entity';
 import { Cart } from 'src/cart/entities/cart.entity';
 import { PlaceRating } from 'src/place/entities/placeRating.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Entity('user')
 export class User {
@@ -53,4 +54,10 @@ export class User {
 
   @OneToMany(() => TravelRoute, (travelroute) => travelroute.user)
   travelRoutes: TravelRoute[];
+
+  @OneToMany(() => Alert, alert => alert.recUser)
+  receivedAlerts: Alert[];
+
+  @OneToMany(() => Alert, alert => alert.sendUser)
+  sentAlerts: Alert[];
 }

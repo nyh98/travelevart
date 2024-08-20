@@ -10,10 +10,11 @@ import { TravelRouteController } from './custom.controller';
 import { TravelRouteService } from './custom.service';
 import { authMiddleware } from 'src/auth/auth.middleware';
 import { Post } from 'src/post/entities/post.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TravelRoute, DetailTravel, User, Place, Region, Post]),
+    TypeOrmModule.forFeature([Alert ,TravelRoute, DetailTravel, User, Place, Region, Post, Alert]),
     AuthModule
   ],
   controllers: [TravelRouteController],

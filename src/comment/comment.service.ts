@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
+import { Alert } from 'src/alert/entities/alert.entity';
 
 
 @Injectable()
@@ -12,9 +13,11 @@ export class CommentService {
         @InjectRepository(Comment)
         private readonly commentRepository: Repository<Comment>,
         @InjectRepository(User)
-        private readonly userRepository: Repository<Comment>,
+        private readonly userRepository: Repository<User>,
         @InjectRepository(Post)
-        private readonly postRepository: Repository<Comment>,
+        private readonly postRepository: Repository<Post>,
+        @InjectRepository(Alert)
+        private readonly alertRepository: Repository<Alert>,
     ) {}
 
     async getComments(postId: number, page: number = 1) {
@@ -75,6 +78,21 @@ export class CommentService {
             })
 
             await this.commentRepository.save(comment);
+
+
+            // if 소켓에 연결 되어 있지 않다면,
+            // {}
+            // else 
+            // 알림 생성 로직 추가
+            const alert = this.alertRepository.create({
+                rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
+                send_user_id: userId,  // 댓글 작성자를 알림의 발신자로 설정
+                type: 'comment',  // 알림 타입을 'comment'로 설정
+                comment_id: comment.id,  // 참조 ID를 생성된 댓글의 ID로 설정
+            });
+
+            await this.alertRepository.save(alert);
+            
             return {
                 message: "댓글 작성이 완료되었습니다."
             }

@@ -1,4 +1,5 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Alert } from "src/alert/entities/alert.entity";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from '../../user/entities/user.entity';
 import { Post } from './post.entity';
 
@@ -23,4 +24,7 @@ export class Postlike {
     @ManyToOne(() => Post, post => post.postlike, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'post_id' })
     post: Post;
+
+    @OneToMany(() => Alert, alert => alert.postlike)
+    alert: Alert[];
 }
