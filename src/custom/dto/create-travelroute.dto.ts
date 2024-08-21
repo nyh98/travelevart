@@ -8,16 +8,11 @@ export class CreateTravelRouteDto {
 }
 
 export class DetailRouteDto {
-  address: string;
-  placeTitle: string;
+  placeId: number;
   routeIndex: number;
-  placeImage: string;
-  mapx: number;
-  mapy: number;
   day: number;
   date: string;
   distance: string;
-  estimatedTime: string;
   playTime: string;
   mapLink: string;
 }
