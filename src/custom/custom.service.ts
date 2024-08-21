@@ -497,12 +497,9 @@ export class TravelRouteService {
     userId: number,
   ): Promise<any> {
     try {
-      const { travelName, travelrouteRange, transportOption, detailRoute } =
-        createTravelRouteDto;
-
+      const { travelName, travelrouteRange, transportOption, detailRoute } = createTravelRouteDto;
       const startDate = new Date(detailRoute[0].date);
       const endDate = new Date(detailRoute[detailRoute.length - 1].date);
-
       const newTravelRoute = this.travelRouteRepository.create({
         userId: userId,
         travelName,
@@ -510,26 +507,19 @@ export class TravelRouteService {
         startDate,
         endDate,
       });
-
-      const savedTravelRoute =
-        await this.travelRouteRepository.save(newTravelRoute);
-
+      const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
       const detailTravelEntities = await Promise.all(
         detailRoute.map(async (detail) => {
           try {
             const place = await this.placeRepository.findOne({
               where: {
-                address: detail.address,
-                title: detail.placeTitle,
+                id: detail.placeId,
               },
             });
-
+  
             if (!place) {
-              throw new NotFoundException(
-                `Place not found for address: ${detail.address}, title: ${detail.placeTitle}`,
-              );
+              throw new NotFoundException(`Place not found for ID: ${detail.placeId}`);
             }
-
             const detailTravel = this.detailTravelRepository.create({
               travelrouteId: savedTravelRoute.id,
               placeId: place.id,
@@ -538,9 +528,9 @@ export class TravelRouteService {
               date: new Date(detail.date),
               contents: null,
               transportOption: transportOption,
-              address: detail.address,
-              placeTitle: detail.placeTitle,
-              placeImage: detail.placeImage,
+              address: place.address, 
+              placeTitle: place.title, 
+              placeImage: place.image, 
               mapLink: detail.mapLink,
             });
             return detailTravel;
@@ -557,4 +547,5 @@ export class TravelRouteService {
       throw error;
     }
   }
+  
 }
