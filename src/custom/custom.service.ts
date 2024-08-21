@@ -498,10 +498,8 @@ export class TravelRouteService {
   ): Promise<any> {
     try {
       const { travelName, travelrouteRange, transportOption, detailRoute } = createTravelRouteDto;
-  
       const startDate = new Date(detailRoute[0].date);
       const endDate = new Date(detailRoute[detailRoute.length - 1].date);
-  
       const newTravelRoute = this.travelRouteRepository.create({
         userId: userId,
         travelName,
@@ -509,9 +507,7 @@ export class TravelRouteService {
         startDate,
         endDate,
       });
-  
       const savedTravelRoute = await this.travelRouteRepository.save(newTravelRoute);
-  
       const detailTravelEntities = await Promise.all(
         detailRoute.map(async (detail) => {
           try {
@@ -524,21 +520,19 @@ export class TravelRouteService {
             if (!place) {
               throw new NotFoundException(`Place not found for ID: ${detail.placeId}`);
             }
-  
             const detailTravel = this.detailTravelRepository.create({
               travelrouteId: savedTravelRoute.id,
               placeId: place.id,
               routeIndex: detail.routeIndex,
               regionId: place.regionId,
               date: new Date(detail.date),
-              contents: null, // 내용이 null로 설정됨
+              contents: null,
               transportOption: transportOption,
-              address: place.address, // placeId를 기반으로 가져온 address를 사용
-              placeTitle: place.title, // placeId를 기반으로 가져온 title을 사용
-              placeImage: place.image, // placeId를 기반으로 가져온 이미지 사용
-              mapLink: detail.mapLink, // 요청에 제공된 mapLink를 사용
+              address: place.address, 
+              placeTitle: place.title, 
+              placeImage: place.image, 
+              mapLink: detail.mapLink,
             });
-  
             return detailTravel;
           } catch (error) {
             console.error('Error while creating DetailTravel:', error);
@@ -546,7 +540,6 @@ export class TravelRouteService {
           }
         }),
       );
-  
       await this.detailTravelRepository.save(detailTravelEntities);
       return { message: '성공' };
     } catch (error) {

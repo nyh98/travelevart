@@ -282,7 +282,7 @@ export class PlaceService {
       return this.placeRepository
         .createQueryBuilder('place')
         .select([
-          'place.title, place.address, place.mapx, place.mapy, place.image',
+          'place.title, place.address, place.mapx, place.mapy, place.image, place.id',
         ])
         .where('place.regionId = :id', { id: region })
         .orderBy('RAND()')
