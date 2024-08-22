@@ -14,6 +14,7 @@ import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 import { S3Module } from 'src/s3/s3.module';
 import { Alert } from 'src/alert/entities/alert.entity';
 import { AlertModule } from 'src/alert/alert.module';
+import { authOptionMiddleware } from 'src/auth/auth-option.middleware';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Alert, Post, Postlike, User, Comment, Postcontent, TravelRoute]), S3Module, AuthModule, RedisModule, AlertModule],
@@ -25,6 +26,19 @@ export class PostModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(authMiddleware)
-      .forRoutes(PostController);
+      .forRoutes(
+        { path: 'posts', method: RequestMethod.POST },
+        { path: 'posts/:id', method: RequestMethod.PATCH },
+        { path: 'posts/:id', method: RequestMethod.DELETE },
+        { path: 'posts/:id/likes', method: RequestMethod.POST },
+        { path: 'posts/:id/likes', method: RequestMethod.DELETE },
+      );
+    consumer
+      .apply(authOptionMiddleware)
+      .forRoutes(
+        { path: 'posts', method: RequestMethod.GET },
+        { path: 'posts/popular', method: RequestMethod.GET },
+        { path: 'posts/:id', method: RequestMethod.GET },
+      );
   }
 }
