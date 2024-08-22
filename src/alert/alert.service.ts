@@ -28,7 +28,7 @@ export class AlertService {
 
   async getAlert(userId: number) {
     try {
-      const alerts = await this.alertRepository.find({
+      const [alerts, totalAlerts] = await this.alertRepository.findAndCount({
         where: { rec_user_id: userId },
         relations: ['sendUser', 'postlike', 'postlike.post', 'comment', 'comment.post', 'travelRoute'],
         order: {
@@ -72,7 +72,10 @@ export class AlertService {
           message: message,  // 최종 메시지
         };
       });
-      return formattedAlerts;
+      return {
+        totalAlerts,  // 전체 알림 수
+        alerts: formattedAlerts,  // 포맷된 알림 목록
+      };
     } catch (error) {
       console.error('Error in getAlert:', error);
       throw new HttpException('알림 데이터를 가져오는 중 오류가 발생했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);

@@ -10,11 +10,13 @@ import { authMiddleware } from 'src/auth/auth.middleware';
 import { Post } from 'src/post/entities/post.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 import { Alert } from './entities/alert.entity';
+import { AlertGateway } from './alert.gateway';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Alert, Postlike, Comment, User, Post, TravelRoute]), AuthModule],
   controllers: [AlertController],
-  providers: [AlertService],
+  providers: [AlertGateway, AlertService],
+  exports: [AlertGateway]
 })
 export class AlertModule {
   configure(consumer: MiddlewareConsumer) {

@@ -19,6 +19,7 @@ import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { Alert } from 'src/alert/entities/alert.entity';
+import { AlertGateway } from 'src/alert/alert.gateway';
 
 @Injectable()
 export class TravelRouteService {
@@ -37,6 +38,7 @@ export class TravelRouteService {
     private postRepository: Repository<Post>,
     @InjectRepository(Alert)
     private alertRepository: Repository<Alert>,
+    private readonly alertGateway: AlertGateway
   ) {}
 
   async createTravelRoute(
@@ -455,18 +457,22 @@ export class TravelRouteService {
       await this.travelRouteRepository.save(newTravelRoute);
 
     // --------------------성률 침범 영역---------------------
-    // if 소켓에 연결 되어 있지 않다면,
-    // {}
-    // else
-    // 알림 생성 로직 추가
     if (post.user_id != userId) {
       const alert = this.alertRepository.create({
-        rec_user_id: post.user_id, // 게시글 작성자를 알림의 수신자로 설정
-        send_user_id: userId, // 좋아요한 사용자를 알림의 발신자로 설정
-        type: 'fork', // 알림 타입을 'like'로 설정
-        travelRoute_id: post.travelRoute.id, // 참조 ID를 생성된 좋아요의 ID로 설정
+        rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
+        send_user_id: userId,  // 좋아요한 사용자를 알림의 발신자로 설정
+        type: 'fork',  // 알림 타입을 'like'로 설정
+        travelRoute_id: post.travelRoute.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
       });
       await this.alertRepository.save(alert);
+      // 전체 알림 수 계산
+      const totalAlerts = await this.alertRepository.count({
+        where: { rec_user_id: post.user_id },
+      });
+
+      // 실시간 알림 전송
+      const message = totalAlerts;
+      this.alertGateway.sendAlertToUser(post.user_id, message);
     }
     // ------------------------------------------------------
 
