@@ -117,7 +117,7 @@ export class PostService implements OnModuleInit {
           const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
             .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
             .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
-            .orderBy('detailtravel.routeIndex', 'ASC')
+            .orderBy('detailtravel.date', 'ASC')
             .getOne();
 
           detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
@@ -228,7 +228,7 @@ export class PostService implements OnModuleInit {
         const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
           .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
           .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
-          .orderBy('detailtravel.routeIndex', 'ASC')
+          .orderBy('detailtravel.date', 'ASC')
           .getOne();
 
         detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
@@ -303,7 +303,7 @@ export class PostService implements OnModuleInit {
       const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
         .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
         .where('travelroute.id = :travelRouteId', { travelRouteId: entityPost.travelRoute_id })
-        .orderBy('detailtravel.routeIndex', 'ASC')
+        .orderBy('detailtravel.date', 'ASC')
         .getOne();
 
   
