@@ -5,6 +5,7 @@ import { Comment } from './entities/comment.entity';
 import { User } from 'src/user/entities/user.entity';
 import { Post } from 'src/post/entities/post.entity';
 import { Alert } from 'src/alert/entities/alert.entity';
+import { AlertGateway } from 'src/alert/alert.gateway';
 
 
 @Injectable()
@@ -18,6 +19,7 @@ export class CommentService {
         private readonly postRepository: Repository<Post>,
         @InjectRepository(Alert)
         private readonly alertRepository: Repository<Alert>,
+        private readonly alertGateway: AlertGateway
     ) {}
 
     async getComments(postId: number, page: number = 1) {
@@ -79,11 +81,6 @@ export class CommentService {
 
             await this.commentRepository.save(comment);
 
-
-            // if 소켓에 연결 되어 있지 않다면,
-            // {}
-            // else 
-            // 알림 생성 로직 추가
             if (post.user_id != userId) {
                 const alert = this.alertRepository.create({
                     rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
@@ -93,7 +90,17 @@ export class CommentService {
                 });
 
                 await this.alertRepository.save(alert);
+
+                // 전체 알림 수 계산
+                const totalAlerts = await this.alertRepository.count({
+                    where: { rec_user_id: post.user_id },
+                });
+
+                // 실시간 알림 전송
+                const message = totalAlerts;
+                this.alertGateway.sendAlertToUser(post.user_id, message);
             }
+
             
             return {
                 message: "댓글 작성이 완료되었습니다."

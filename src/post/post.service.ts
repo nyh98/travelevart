@@ -10,6 +10,7 @@ import { RedisService } from 'src/redis/redis.service';
 import { Postcontent } from './entities/postcontent.entity';
 import { TravelRoute } from 'src/custom/entities/travelroute.entity';
 import { Alert } from 'src/alert/entities/alert.entity';
+import { AlertGateway } from 'src/alert/alert.gateway';
 
 @Injectable()
 export class PostService implements OnModuleInit {
@@ -30,6 +31,7 @@ export class PostService implements OnModuleInit {
     private readonly travelRouteRepository: Repository<TravelRoute>,
     @InjectRepository(Alert)
     private readonly alertRepository: Repository<Alert>,
+    private readonly alertGateway: AlertGateway
   ) {}
 
   async onModuleInit() {
@@ -441,10 +443,6 @@ export class PostService implements OnModuleInit {
       const like = this.likeRepository.create({ user_id: user.id, post_id: post.id });
       const saveedLike = await this.likeRepository.save(like);
 
-      // if 소켓에 연결 되어 있지 않다면,
-      // {}
-      // else 
-      // 알림 생성 로직 추가
       if (post.user_id != user_id) {
         const alert = this.alertRepository.create({
           rec_user_id: post.user_id,  // 게시글 작성자를 알림의 수신자로 설정
@@ -453,6 +451,15 @@ export class PostService implements OnModuleInit {
           postlike_id: saveedLike.id,  // 참조 ID를 생성된 좋아요의 ID로 설정
         });
         await this.alertRepository.save(alert);
+
+        // 전체 알림 수 계산
+        const totalAlerts = await this.alertRepository.count({
+          where: { rec_user_id: post.user_id },
+        });
+
+        // 실시간 알림 전송
+        const message = totalAlerts;
+        this.alertGateway.sendAlertToUser(post.user_id, message);
       }
       return "좋아요 추가"  
     } catch (error) {
