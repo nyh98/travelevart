@@ -69,6 +69,6 @@ export class RecommendationsDto {
 
   @IsOptional()
   @IsString({ message: '여행 컨셉은 문자열입니다' })
-  @Length(1, 5, { message: '컨셉은 5글자가 최대입니다' })
+  @Length(0, 5, { message: '컨셉은 5글자가 최대입니다' })
   concept: string;
 }
