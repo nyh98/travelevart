@@ -12,13 +12,13 @@ export class GptService {
   }
 
   async recommendations(
-    travleRaws: Place[],
+    travelRaws: { region: string; places: Place[] }[],
+    dayCount: number,
     age: number,
     sdate: string,
     edate: string,
     transportation: string,
     people: number,
-    concept: string,
   ) {
     const jsonFormat = `{
       routes: {
@@ -34,7 +34,14 @@ export class GptService {
       }[]
     }
     `;
-    const travleRawsJson = JSON.stringify(travleRaws);
+    const travleRawsJson = JSON.stringify(travelRaws);
+    let routeMessage: string;
+    const day = Math.ceil(dayCount / travelRaws.length);
+
+    if (travelRaws.length > 1) {
+      routeMessage = `일정은 ${travelRaws[0].region} 을 시작으로 그 다음 ${travelRaws[1].region}${travelRaws[2] ? ` 그 다음 ${travelRaws[2].region}` : ''} 순으로 이동하려고해
+       ${day}일 연속 ${travelRaws[0].region} ${day}일 연속 ${travelRaws[1].region} ${travelRaws[2] ? `${day}일 연속 ${travelRaws[2].region}` : ''}으로 경로를 짜줄것.`;
+    }
 
     const result = await this.gptClient.chat.completions.create({
       model: 'gpt-4o-mini-2024-07-18',
@@ -46,9 +53,11 @@ export class GptService {
         {
           role: 'user',
           content: `${travleRawsJson} 해당 여행지들 중에서 여행지 추천해줘 ${age ? `${age}대들이` : ''} ${people ? `${people}명이서` : ''} ${sdate} 부터 ${edate} 까지 
-          ${transportation}로 여행을 갈건데 ${concept ? `여행 컨셉은 ${concept}이고` : ''} 서로 거리가 가까운 순으로 추천해주고.
-          day는 날짜별로 정해줘. routeIndex는 day별로 1부터 시작할것. 날마다 최소 한곳은 가게해서 무조건 ${sdate} 부터 ${edate} 까지 일정을 다 채울것. 지역이 여러개 있으면 지역마다 들릴것.
-          day의 마지막 여행지의 distance, estimatedTime는 null로 해.`,
+          ${transportation}로 여행을 갈건데 서로 거리가 가까운 순으로 추천해주고.
+          ${routeMessage ? routeMessage : ''}
+          day는 날짜별로 정해줘. routeIndex는 day별로 1부터 시작할것. 날마다 최소 한곳은 가게해서 무조건 ${sdate} 부터 ${edate} 까지 일정을 다 채울것.
+          지역이 여러개면 date 별로 해당 지역을 갈것.
+          여행 루트중 한번 갔던 여행지는 안갈것 즉 중복된 여행지는 없을것. day의 마지막 여행지의 distance, estimatedTime는 null로 해.`,
         },
       ],
       response_format: { type: 'json_object' },
@@ -62,9 +71,17 @@ export class GptService {
 
     const routes = answer.routes.map((day) => {
       const detail = day.detail.map((route, i) => {
-        const currentPlace = travleRaws.find(
-          (place) => place.id === route.placeId,
-        );
+        let currentPlace: Place;
+
+        for (const travels of travelRaws) {
+          const searchPlace = travels.places.find(
+            (place) => place.id === route.placeId,
+          );
+          if (searchPlace) {
+            currentPlace = searchPlace;
+            break;
+          }
+        }
 
         let mapLink: string;
 
@@ -73,7 +90,19 @@ export class GptService {
           mapLink = null;
         } else {
           const { placeId } = day.detail[i + 1];
-          const nextPlace = travleRaws.find((place) => place.id === placeId);
+
+          let nextPlace: Place;
+
+          for (const travels of travelRaws) {
+            const searchPlace = travels.places.find(
+              (place) => place.id === placeId,
+            );
+            if (searchPlace) {
+              nextPlace = searchPlace;
+              break;
+            }
+          }
+
           const stext = currentPlace.title.split(' ').join('+');
           const etext = nextPlace.title.split(' ').join('+');
 

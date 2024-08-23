@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Place } from './entities/place.entity';
-import { FindOperator, Like, QueryFailedError, Repository } from 'typeorm';
+import { FindOperator, In, Like, QueryFailedError, Repository } from 'typeorm';
 import { HttpService } from '@nestjs/axios';
 import {
   PaginationDto,
@@ -264,18 +264,36 @@ export class PlaceService {
   async recommendations(recommendationsDto: RecommendationsDto) {
     const { region1, region2, region3 } = recommendationsDto;
 
-    const regions = [region1, region2, region3];
+    const regionPromise = [region1, region2, region3].map(async (region) => {
+      if (region) {
+        return this.regionRepository.findOne({
+          select: ['id', 'region'],
+          where: { id: region },
+        });
+      }
+    });
 
-    const randomPlace: Place[] = [];
+    //지역 순서를 보장하기 위해 all 사용
+    const regions = (await Promise.all(regionPromise)).filter(
+      (region) => region,
+    );
+
+    const randomPlace: { region: string; places: Place[] }[] = [];
 
     const millisecond =
       new Date(recommendationsDto.edate).getTime() -
       new Date(recommendationsDto.sdate).getTime();
 
-    const limit = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산
+    const day = millisecond / (1000 * 60 * 60 * 24) + 1; //몇일 여행인지 계산
+    const regionCount = regions.length; //여행 지역 갯수
+    let limit = Math.ceil((day * 3) / regionCount); //여행지 조회 갯수
 
-    if (limit > 10) {
+    if (day > 10) {
       throw new BadRequestException('여행 추천 일정은 최대 10일 입니다');
+    }
+
+    if (day < regionCount) {
+      throw new BadRequestException('여행 일수보다 여행 지역이 많습니다');
     }
 
     const promise = regions.map(async (region) => {
@@ -284,27 +302,31 @@ export class PlaceService {
         .select([
           'place.title, place.address, place.mapx, place.mapy, place.image, place.id',
         ])
-        .where('place.regionId = :id', { id: region })
+        .where('place.regionId = :id', { id: region.id })
         .orderBy('RAND()')
-        .limit(limit * 2)
+        .limit(limit)
         .getRawMany();
     });
 
     const result = await Promise.all(promise);
 
-    result.forEach((places) => randomPlace.push(...places));
+    result.forEach((places, i) => {
+      if (places.length) {
+        randomPlace.push({ region: regions[i].region, places: places });
+      }
+    });
 
     const transportation =
       recommendationsDto.transportation === 'public' ? '대중교통' : '자차';
 
     const recommendations = await this.GptService.recommendations(
       randomPlace,
+      day,
       recommendationsDto.age,
       recommendationsDto.sdate,
       recommendationsDto.edate,
       transportation,
       recommendationsDto.people,
-      recommendationsDto.concept,
     );
     return recommendations;
   }

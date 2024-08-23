@@ -66,9 +66,4 @@ export class RecommendationsDto {
   @IsNumber({}, { message: '인원수는 숫자로 입력해야 합니다' })
   @Type(() => Number)
   people: number;
-
-  @IsOptional()
-  @IsString({ message: '여행 컨셉은 문자열입니다' })
-  @Length(0, 5, { message: '컨셉은 5글자가 최대입니다' })
-  concept: string;
 }
