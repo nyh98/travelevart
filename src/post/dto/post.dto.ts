@@ -28,6 +28,10 @@ export class CreatePostContentDto  {
     @IsString()
     @IsOptional()
     image?: string;
+
+    @IsNumber()
+    @IsOptional()
+    detailtravel_id?: string;
 }
 
 // 게시글 작성 및 수정

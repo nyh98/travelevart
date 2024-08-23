@@ -325,7 +325,8 @@ export class PostService implements OnModuleInit {
           postId: content.post_id,
           order: content.order,
           text: content.contents,
-          image: content.contents_img
+          image: content.contents_img,
+          detailtravel_id: content.detailtravel_id
         })) : [],
         like: parseInt(rawPost.likeCount, 10) || 0,
         isLiked: rawPost.isLiked == 1,
@@ -358,7 +359,8 @@ export class PostService implements OnModuleInit {
           post_id: savePost.id,
           order: index + 1,
           contents: content.text,
-          contents_img: content.image
+          contents_img: content.image,
+          detailtravel_id: content.detailtravel_id ? Number(content.detailtravel_id) : null
         }));
         await this.postcontentRepository.save(postContents)
       }

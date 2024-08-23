@@ -10,6 +10,7 @@ import { Diary } from '../../diary/entities/diary.entity';
 import { TravelRoute } from './travelroute.entity';
 import { Place } from 'src/place/entities/place.entity';
 import { Region } from 'src/place/entities/region.entity';
+import { Postcontent } from 'src/post/entities/postcontent.entity';
 
 @Entity('detailtravel')
 export class DetailTravel {
@@ -63,4 +64,7 @@ export class DetailTravel {
 
   @OneToMany(() => Diary, (diary) => diary.detailTravel)
   diaries: Diary[];
+
+  @OneToMany(() => Postcontent, (postcontent) => postcontent.detailTravel)
+  postcontents: Postcontent[];
 }
