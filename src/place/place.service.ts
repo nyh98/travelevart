@@ -320,6 +320,7 @@ export class PlaceService {
       recommendationsDto.transportation === 'public' ? '대중교통' : '자차';
 
     const recommendations = await this.GptService.recommendations(
+      regions,
       randomPlace,
       day,
       recommendationsDto.age,
