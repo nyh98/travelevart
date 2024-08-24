@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import OpenAI from 'openai';
 import { Place } from 'src/place/entities/place.entity';
+import { Region } from 'src/place/entities/region.entity';
 import { Irecommendations } from 'src/types/ai-response';
 
 @Injectable()
@@ -12,6 +13,7 @@ export class GptService {
   }
 
   async recommendations(
+    regions: Region[],
     travelRaws: { region: string; places: Place[] }[],
     dayCount: number,
     age: number,
@@ -123,6 +125,6 @@ export class GptService {
       return { day: day.date, detail };
     });
 
-    return { transportOption: transportation, routes };
+    return { transportOption: transportation, regions, routes };
   }
 }
