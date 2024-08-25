@@ -36,7 +36,7 @@ export class PostController {
       return await this.postService.getMypagePosts(id);
     } catch (error) {
       throw new HttpException(
-        error.message || 'getMyPosts controller 에러',
+        error.message || '내 게시글 조회 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -54,7 +54,7 @@ export class PostController {
     } catch (error) {
       // 여기서 추가적인 로깅이나 에러 처리를 할 수 있습니다.
       throw new HttpException(
-        error.message || 'getPosts controller 에러',
+        error.message || '게시글들 조회 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -71,7 +71,7 @@ export class PostController {
       return await this.postService.getPopularPosts(target);
     } catch (error) {
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || '인기 게시글 조회 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -89,7 +89,7 @@ export class PostController {
     } catch (error) {
       // 여기서 추가적인 로깅이나 에러 처리를 할 수 있습니다.
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || '게시글 상세 조회 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -132,7 +132,7 @@ export class PostController {
       return await this.postService.createPost(postPostsDto, req.user.id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '게시글 작성 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -177,12 +177,13 @@ export class PostController {
       return await this.postService.modifyPost(postPostsDto);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '게시글 수정 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
+  // 게시글 삭제
   @Delete(':id')
   async deletePost(@Param('id', ParseIntPipe) id: number) {
     try {
@@ -196,12 +197,13 @@ export class PostController {
       return await this.postService.deletePost(id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '게시글 삭제 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
+  // 좋아요
   @Post(':id/likes')
   async likePost(
     @Param('id', ParseIntPipe) post_id: number,
@@ -211,12 +213,13 @@ export class PostController {
       return await this.postService.likePost(post_id, req.user.id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '좋아요 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
+  // 좋아요 삭제
   @Delete(':id/likes')
   async unlikePost(
     @Param('id', ParseIntPipe) post_id: number,
@@ -226,7 +229,7 @@ export class PostController {
       return await this.postService.unlikePost(post_id, req.user.id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '좋아요 삭제 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

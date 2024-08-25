@@ -141,6 +141,7 @@ export class PostService implements OnModuleInit {
 
           detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
             image: travel.placeImage,
+            title: travel.placeTitle
           })) : [];
         }
 
@@ -156,12 +157,13 @@ export class PostService implements OnModuleInit {
           travelRoute_id: post.travelRoute_id,
           like: parseInt(rawPosts[index].likeCount, 10) || 0,
           detailTravels: detailTravels,
-          contents: post.postContents.map(content => ({
+          contents: post.postContents.map((content, idx) => ({
             id: content.id,
             postId: content.post_id,
             order: content.order,
             text: content.contents,
-            image: content.contents_img
+            image: content.contents_img || (detailTravels[idx]?.image || null),
+            title: detailTravels[idx].title,
           })),
           isLiked: rawPosts[index].isLiked == 1
         };
@@ -175,7 +177,7 @@ export class PostService implements OnModuleInit {
       };
     } catch (error) {
       console.error('Error :', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts (일반 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`GET /posts (전체 게시물 조회) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     };
   };
 
@@ -213,7 +215,7 @@ export class PostService implements OnModuleInit {
       }
     } catch (error) {
       console.error('Error :', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts (인기 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`GET /posts (인기 게시물 조회) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -352,10 +354,11 @@ export class PostService implements OnModuleInit {
       };
     } catch (error) {
       console.error('Error:', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts/:id 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`GET /posts/:id (게시글 상세 조회) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
+  // 게시글 작성
   async createPost(postPostsDto: PostPostsDto, user_id: number) {
     try {
       const { title, contents, travelRoute_id } = postPostsDto;
@@ -388,8 +391,8 @@ export class PostService implements OnModuleInit {
         message: "게시글 작성이 완료되었습니다."
       }
     } catch (error) {
-      console.log(error);
-      throw new HttpException('삐빅 데이터베이스 쿼리 Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`POST /posts (게시물 작성) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   } 
 
@@ -423,7 +426,8 @@ export class PostService implements OnModuleInit {
       }
       return await this.postRepository.save(post);
     } catch (error) {
-      throw new HttpException('삐빅 데이터베이스 쿼리 Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`PATCH /posts/:id (게시물 수정) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -435,12 +439,12 @@ export class PostService implements OnModuleInit {
     try {
       const result = await this.dataSource.getRepository(Post).delete(id);
       if (result.affected === 0) {
-        throw new HttpException('삭제 실패! 그런거없음!', HttpStatus.NOT_FOUND);
+        throw new HttpException('삭제하려는 게시글이 없습니다.', HttpStatus.NOT_FOUND);
       }
       return 'Success';
     } catch (error) {
-      console.log(error.message);
-      throw new HttpException('응 안돼~', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`DELETE /posts/:id (게시물 삭제) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -448,17 +452,17 @@ export class PostService implements OnModuleInit {
     try {
       const post = await this.postRepository.findOne({ where: { id: post_id } });
       if (!post) {
-        throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('게시글을 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
       }
   
       const user = await this.userRepository.findOne({ where: { id: user_id } });
       if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
       }
   
       const existingLike = await this.likeRepository.findOne({ where: { user, post } });
       if (existingLike) {
-        throw new HttpException('Post already liked', HttpStatus.CONFLICT);
+        throw new HttpException('이미 좋아요를 했습니다.', HttpStatus.CONFLICT);
       }
   
       const like = this.likeRepository.create({ user_id: user.id, post_id: post.id });
@@ -482,10 +486,10 @@ export class PostService implements OnModuleInit {
         const message = totalAlerts;
         this.alertGateway.sendAlertToUser(post.user_id, message);
       }
-      return "좋아요 추가"  
+      return { message: '좋아요 성공' }; 
     } catch (error) {
-      console.log("좋아요 추가 에러 : ", error);
-      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`POST /posts/:id (좋아요) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -493,24 +497,25 @@ export class PostService implements OnModuleInit {
     try {
       const post = await this.postRepository.findOne({ where: { id: post_id } });
       if (!post) {
-        throw new HttpException('Post not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('게시글을 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
       }
 
       const user = await this.userRepository.findOne({ where: { id: user_id } });
       if (!user) {
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('사용자를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
       }
 
       const existingLike = await this.likeRepository.findOne({ where: { user, post } });
       if (!existingLike) {
-        throw new HttpException('Like not found', HttpStatus.NOT_FOUND);
+        throw new HttpException('좋아요를 찾을 수 없습니다.', HttpStatus.NOT_FOUND);
       }
 
       await this.likeRepository.remove(existingLike);
-      return { message: '좋아요 캇ㅌ' };
+      return { message: '좋아요 삭제 성공' };
       
     } catch (error) {
-      throw new HttpException('Internal Server Error', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error); // 에러 로그 추가
+      throw new HttpException(`DELETE /posts/:id (좋아요 삭제) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
