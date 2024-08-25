@@ -38,6 +38,25 @@ export class PostService implements OnModuleInit {
     await this.updatePopularPosts();
   }
 
+  async getMyPosts(userId: number) {
+    const qb = this.postRepository.createQueryBuilder('post')
+      .leftJoin('post.comment', 'comment') // 댓글과 조인
+      .leftJoin('post.postlike', 'postlike') // 좋아요와 조인
+      .where('post.user_id = :userId', { userId })
+      .addSelect('COUNT(DISTINCT comment.id)', 'commentCount') // 댓글 수 계산
+      .addSelect('COUNT(DISTINCT postlike.id)', 'likeCount') // 좋아요 수 계산
+      .groupBy('post.id') // 게시물별로 그룹화
+      .orderBy('post.created_at', 'DESC');
+
+    const posts = await qb.getRawAndEntities();
+
+    return posts.entities.map((post, index) => ({
+      ...post,
+      commentCount: parseInt(posts.raw[index].commentCount, 10) || 0,
+      likeCount: parseInt(posts.raw[index].likeCount, 10) || 0,
+    }));
+  }
+
   // 일반 게시물 조회
   async getPosts(query: GetPostsDto, userId:number | null): Promise<{ posts: PostDetailDto[]; currentPage: number, totalPage: number }> {
     let { target, searchName, page, pageSize } = query;

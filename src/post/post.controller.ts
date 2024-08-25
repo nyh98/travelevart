@@ -27,6 +27,22 @@ export class PostController {
     private S3Service: S3Service,
   ) {}
 
+  @Get('/my')
+  // 내 게시글 조회
+  async getMyPosts(
+    @Req() req:Request
+  ) {
+    try {
+      const userId = req.user.id;
+      return await this.postService.getMyPosts(userId);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'getMyPosts controller 에러',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
   // 게시글들 조회
   @Get()
   async getPosts(
@@ -39,7 +55,7 @@ export class PostController {
     } catch (error) {
       // 여기서 추가적인 로깅이나 에러 처리를 할 수 있습니다.
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || 'getPosts controller 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
