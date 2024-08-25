@@ -227,12 +227,18 @@ export class PlaceService {
           review: ratingData.review,
         });
       } else {
+        const utcDate = new Date();
+        const utcOffset = utcDate.getTimezoneOffset() * 60000;
+        const koreaDate = new Date(
+          utcDate.getTime() + utcOffset + 9 * 60 * 60000,
+        );
+
         const newRating = this.ratingRepository.create({
           placeId: place.id,
           userId,
           ratingValue: ratingData.ratingValue,
           review: ratingData.review,
-          createdAt: new Date(),
+          createdAt: koreaDate,
         });
         await this.ratingRepository.save(newRating);
       }
@@ -241,6 +247,7 @@ export class PlaceService {
         throw new BadRequestException('별점은 0~5점만 줄 수 있습니다');
       }
 
+      console.log(e);
       throw new InternalServerErrorException('에러 발생 관리자에게 문의주세요');
     }
   }
