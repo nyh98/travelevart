@@ -46,7 +46,7 @@ export class PostService implements OnModuleInit {
       .addSelect('COUNT(DISTINCT comment.id)', 'commentCount') // 댓글 수 계산
       .addSelect('COUNT(DISTINCT postlike.id)', 'likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
-      .orderBy('post.created_at', 'DESC');
+      .orderBy('post.created_at', 'DESC')
 
     const posts = await qb.getRawAndEntities();
 
@@ -95,7 +95,8 @@ export class PostService implements OnModuleInit {
       .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
       .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
-      .orderBy('postContents', 'ASC')
+      .orderBy('post.created_at', 'DESC') // 게시글을 최신순으로 정렬
+      .addOrderBy('postContents.order', 'ASC'); // 게시글 내부 콘텐츠를 순서대로 정렬
 
     if (userId) {
       qb.addSelect(`CASE WHEN postlike.user_id = :userId THEN TRUE ELSE FALSE END`, 'isLiked')
@@ -157,14 +158,19 @@ export class PostService implements OnModuleInit {
           travelRoute_id: post.travelRoute_id,
           like: parseInt(rawPosts[index].likeCount, 10) || 0,
           detailTravels: detailTravels,
-          contents: post.postContents.map((content, idx) => ({
-            id: content.id,
-            postId: content.post_id,
-            order: content.order,
-            text: content.contents,
-            image: content.contents_img || (detailTravels[idx]?.image || null),
-            title: detailTravels[idx].title,
-          })),
+          contents: post.postContents
+            .sort((a, b) => a.order - b.order)
+            .map((content, idx) => {
+              const travelDetail = detailTravels[idx] || {};
+              return {
+                id: content.id,
+                postId: content.post_id,
+                order: content.order,
+                text: content.contents,
+                image: content.contents_img || (detailTravels[idx]?.image || null),
+                title: travelDetail.title || '',
+              }
+          }),
           isLiked: rawPosts[index].isLiked == 1
         };
       });
