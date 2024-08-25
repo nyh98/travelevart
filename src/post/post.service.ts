@@ -65,14 +65,14 @@ export class PostService implements OnModuleInit {
     const pageSizeNumber = page ? parseInt(pageSize, 10) : 10;
 
     if (!target) {
-      target = '여행게시판';
+      target = 'Stories';
     }
 
     // 조건 설정
     const whereCondition: any = {};
-    if (target === '여행게시판') {
+    if (target === 'Stories') {
       whereCondition.travelRoute_id = Not(IsNull());
-    } else if (target === '자유게시판') {
+    } else if (target === 'Questions') {
       whereCondition.travelRoute_id = IsNull();
     }
 
@@ -102,9 +102,9 @@ export class PostService implements OnModuleInit {
         .setParameter('userId', userId);
     }
 
-    if (target === '여행게시판') {
+    if (target === 'Stories') {
       qb.andWhere('post.travelRoute_id IS NOT NULL');
-    } else if (target === '자유게시판') {
+    } else if (target === 'Questions') {
       qb.andWhere('post.travelRoute_id IS NULL');
     }
 
@@ -185,14 +185,14 @@ export class PostService implements OnModuleInit {
   async getPopularPosts(target: string): Promise<{ popularPosts: PopularPostDetailDto[]; }> {
     try {
       if (!target) {
-        target = '여행게시판';
+        target = 'Stories';
       }
 
       let cachedPopularPosts = null;
 
-      if (target === '여행게시판') {
+      if (target === 'Stories') {
         cachedPopularPosts = await this.redisService.getPopularTravelPostsCache();
-      } else if (target === '자유게시판') {
+      } else if (target === 'Questions') {
         cachedPopularPosts = await this.redisService.getPopularNormalPostsCache();
       }
 
@@ -204,9 +204,9 @@ export class PostService implements OnModuleInit {
       const popularPosts = await this.calculatePopularPosts(target);
 
       // 캐시 저장 (TTL 1일로 설정)
-      if (target === '여행게시판') {
+      if (target === 'Stories') {
         await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
-      } else if (target === '자유게시판') {
+      } else if (target === 'Questions') {
         await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularPosts), 60 * 60 * 24);
       }
 
@@ -233,9 +233,9 @@ export class PostService implements OnModuleInit {
       .orderBy('score', 'DESC')
       .limit(5);
 
-    if (target === '여행게시판') {
+    if (target === 'Stories') {
       query = query.andWhere('post.travelRoute_id IS NOT NULL');
-    } else if (target === '자유게시판') {
+    } else if (target === 'Questions') {
       query = query.andWhere('post.travelRoute_id IS NULL');
     }
 
@@ -278,10 +278,10 @@ export class PostService implements OnModuleInit {
 
   // 인기 게시물 업데이트
   async updatePopularPosts() {
-    const popularTravelPosts = await this.calculatePopularPosts('여행게시판');
+    const popularTravelPosts = await this.calculatePopularPosts('Stories');
     await this.redisService.setPopularTravelPostsCache(JSON.stringify(popularTravelPosts), 60 * 60 * 24);
 
-    const popularNormalPosts = await this.calculatePopularPosts('자유게시판');
+    const popularNormalPosts = await this.calculatePopularPosts('Questions');
     await this.redisService.setPopularNormalPostsCache(JSON.stringify(popularNormalPosts), 60 * 60 * 24);
   }
 

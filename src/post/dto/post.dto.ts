@@ -32,6 +32,10 @@ export class CreatePostContentDto  {
     @IsNumber()
     @IsOptional()
     detailtravel_id?: string;
+
+    @IsNumber()
+    @IsOptional()
+    imageIndex?: number; // imageIndex 속성 추가
 }
 
 // 게시글 작성 및 수정

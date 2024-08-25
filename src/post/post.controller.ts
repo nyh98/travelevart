@@ -17,7 +17,7 @@ import {
 import { GetPostsDto, PostPostsDto } from './dto/post.dto';
 import { PostService } from './post.service';
 import { Request } from 'express';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { S3Service } from 'src/s3/s3.service';
 
 @Controller('posts')
@@ -95,42 +95,40 @@ export class PostController {
     }
   }
 
-  // 게시글 작성
   @Post()
-  @UseInterceptors(FilesInterceptor('image'))
+  @UseInterceptors(AnyFilesInterceptor())
   async createPost(
     @UploadedFiles() files: Express.Multer.File[],
     @Body() postPostsDto: PostPostsDto, 
     @Req() req: Request
   ) {
-    try {
+    try {  
       if (typeof postPostsDto.contents === 'string') {
         postPostsDto.contents = JSON.parse(postPostsDto.contents);
       }
-
+  
       if (postPostsDto.contents) {
-        postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {          
-
-          if (files && files[index]) {
-            const file = files[index];
-            
-            // 파일이 실제로 존재하면 S3에 업로드
-            if (file) {
-              const imageUrl = await this.S3Service.uploadSingleFile(file); // 파일을 S3에 업로드
-              content.image = imageUrl; // S3에서 반환된 URL을 image 필드에 설정
-            }
+        postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {
+          // 각 content에 맞는 파일을 찾음
+          const matchingFile = files.find(file => file.fieldname === `image[${index}]`);
+  
+          if (matchingFile) {
+  
+            const imageUrl = await this.S3Service.uploadSingleFile(matchingFile);
+            content.image = imageUrl;
           } else {
-            console.log("파일이 없습니다.");
+            content.image = null; // 파일이 없는 경우 null로 설정
           }
-          
+  
           return content;
         }));
       } else {
         console.log("contents가 비어 있습니다.");
       }
-
+  
       return await this.postService.createPost(postPostsDto, req.user.id);
     } catch (error) {
+      console.error("Error during post creation:", error);
       throw new HttpException(
         error.message || '게시글 작성 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
@@ -140,7 +138,7 @@ export class PostController {
 
   // 게시글 수정
   @Patch(':id')
-  @UseInterceptors(FilesInterceptor('image'))
+  @UseInterceptors(AnyFilesInterceptor())
   async modifyPost(
     @Param('id', ParseIntPipe) id: number,
     @UploadedFiles() files: Express.Multer.File[], 
@@ -161,17 +159,24 @@ export class PostController {
           await this.S3Service.deleteFile(content.contents_img);
         }
       }
-      
-      // 
+  
       if (postPostsDto.contents) {
         postPostsDto.contents = await Promise.all(postPostsDto.contents.map(async (content, index) => {
-          const file = files[index];
-          if (file) {
-            const imageUrl = await this.S3Service.uploadSingleFile(file); // 파일을 S3에 업로드
-            content.image = imageUrl; // S3에서 반환된 URL을 image 필드에 설정
+          // 각 content에 맞는 파일을 찾음
+          const matchingFile = files.find(file => file.fieldname === `image[${index}]`);
+  
+          if (matchingFile) {
+  
+            const imageUrl = await this.S3Service.uploadSingleFile(matchingFile);
+            content.image = imageUrl;
+          } else {
+            content.image = null; // 파일이 없는 경우 null로 설정
           }
+  
           return content;
         }));
+      } else {
+        console.log("contents가 비어 있습니다.");
       }
 
       return await this.postService.modifyPost(postPostsDto);
