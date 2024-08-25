@@ -187,6 +187,8 @@ export class TravelRouteService {
     // 날짜가 바뀌면
     if (newRoute.startDate || newRoute.endDate) {
       const { detailTravels } = travelRoute;
+      
+      // 새로운 상세 경로 목록 생성 (첫날의 데이터만 포함)
       const newDetailTravels = detailTravels
         .map((detail, i) => {
           if (detail.placeId) {
@@ -200,27 +202,9 @@ export class TravelRouteService {
         })
         .filter((detail) => detail);
   
-      const days = this.getDatesInRange(
-        newRoute.startDate ? newRoute.startDate : travelRoute.startDate,
-        newRoute.endDate ? newRoute.endDate : travelRoute.endDate,
-      );
-  
-      // 빈 데이터 방지: 첫날을 제외한 다른 날짜에 데이터가 생성되지 않도록 설정
-      const initRoute = days
-        .map((day) => ({
-          travelrouteId: travelRoute.id,
-          date: day,
-        }))
-        .filter((day) => day.date !== new Date(newRoute.startDate).toISOString().split('T')[0]); // 첫 날 제외
-  
-      // detailTravels 저장
+      // 첫날의 데이터만 업데이트, 첫날 제외한 데이터는 생성하지 않음
       if (newDetailTravels.length > 0) {
         await this.detailTravelRepository.save(newDetailTravels);
-      }
-  
-      // initRoute가 비어있지 않은 경우에만 저장
-      if (initRoute.length > 0) {
-        await this.detailTravelRepository.save(initRoute);
       }
   
       // 기존 detailTravels 제거
@@ -229,33 +213,6 @@ export class TravelRouteService {
   
     return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
   }
-  
-  // 날짜 범위 계산 함수
-  private getDatesInRange(startDate: Date, endDate: Date): string[] {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const dateArray = [];
-  
-    if (start > end) {
-      throw new BadRequestException(
-        '시작날은 마지막날 보다 뒤에날이여야 합니다',
-      );
-    }
-  
-    // 현재 날짜가 종료 날짜보다 작거나 같을 때까지 반복
-    while (start <= end) {
-      // 날짜 배열에 추가 (YYYY-MM-DD 형식)
-      dateArray.push(new Date(start).toISOString().split('T')[0]);
-      // 하루 추가
-      start.setDate(start.getDate() + 1);
-    }
-  
-    // 시작날 이외의 날짜만 추출
-    return dateArray.filter((date, i) => i !== 0);
-  }
-  
-  
-  
 
   async updateDetailTravels(
     travelrouteId: number,
