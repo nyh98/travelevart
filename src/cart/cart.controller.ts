@@ -42,13 +42,14 @@ export class CartController {
     }
   }
 
-  @Get()
+  @Get(':userId')
   async getCartDetails(
+    @Param('userId') userId: number,
     @Req() req: Request,
     @Res() response
   ) {
     try {
-        const cartItems = await this.cartService.getAllCartItems(req.user.id);
+        const cartItems = await this.cartService.getAllCartItems(userId);
         return response.status(HttpStatus.OK).json(cartItems);
     } catch (error) {
       if (error instanceof HttpException) {
