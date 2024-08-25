@@ -32,7 +32,6 @@ export class PostModule {
         { path: 'posts/:id', method: RequestMethod.DELETE },
         { path: 'posts/:id/likes', method: RequestMethod.POST },
         { path: 'posts/:id/likes', method: RequestMethod.DELETE },
-        { path: 'posts/my', method: RequestMethod.GET },
       );
     consumer
       .apply(authOptionMiddleware)
@@ -40,6 +39,7 @@ export class PostModule {
         { path: 'posts', method: RequestMethod.GET },
         { path: 'posts/popular', method: RequestMethod.GET },
         { path: 'posts/:id', method: RequestMethod.GET },
+        { path: 'posts/mypage/:id', method: RequestMethod.GET },
       );
   }
 }

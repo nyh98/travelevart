@@ -27,14 +27,13 @@ export class PostController {
     private S3Service: S3Service,
   ) {}
 
-  @Get('/my')
+  @Get('/mypage/:id')
   // 내 게시글 조회
   async getMyPosts(
-    @Req() req:Request
+    @Param('id', ParseIntPipe) id: number,
   ) {
     try {
-      const userId = req.user.id;
-      return await this.postService.getMyPosts(userId);
+      return await this.postService.getMypagePosts(id);
     } catch (error) {
       throw new HttpException(
         error.message || 'getMyPosts controller 에러',

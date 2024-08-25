@@ -38,7 +38,7 @@ export class PostService implements OnModuleInit {
     await this.updatePopularPosts();
   }
 
-  async getMyPosts(userId: number) {
+  async getMypagePosts(userId: number) {
     const qb = this.postRepository.createQueryBuilder('post')
       .leftJoin('post.comment', 'comment') // 댓글과 조인
       .leftJoin('post.postlike', 'postlike') // 좋아요와 조인
