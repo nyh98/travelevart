@@ -176,7 +176,8 @@ export class TravelRouteService {
       updateObject.startDate = updateTravelRouteDto.startDate;
     }
   
-    if (updateTravelRouteDto.travelrouteRange) {
+    // travelrouteRange가 undefined가 아닐 때만 업데이트
+    if (updateTravelRouteDto.travelrouteRange !== undefined) {
       updateObject.travelrouteRange = updateTravelRouteDto.travelrouteRange;
     }
   
@@ -186,8 +187,6 @@ export class TravelRouteService {
     // 날짜가 바뀌면
     if (newRoute.startDate || newRoute.endDate) {
       const { detailTravels } = travelRoute;
-  
-      // 새로운 날짜에 맞게 이동하거나 복제된 detailTravels 생성
       const newDetailTravels = detailTravels
         .map((detail, i) => {
           if (detail.placeId) {
@@ -199,38 +198,26 @@ export class TravelRouteService {
             };
           }
         })
-        .filter((detail) => detail); // 빈 객체나 null 필터링
+        .filter((detail) => detail);
   
-      // 날짜 범위 생성
       const days = this.getDatesInRange(
         newRoute.startDate ? newRoute.startDate : travelRoute.startDate,
         newRoute.endDate ? newRoute.endDate : travelRoute.endDate,
       );
   
-      // 빈 데이터 방지: placeId가 없는 경우 detail 객체를 생성하지 않음
-      const initRoute = days
-        .map((day) => ({
-          travelrouteId: travelRoute.id,
-          date: day,
-        }))
-        .filter((detail) => new Date(detail.date) !== newRoute.startDate); // 첫 날 제외
+      const initRoute = days.map((day) => ({
+        travelrouteId: travelRoute.id,
+        date: day,
+      }));
   
-      // detailTravels 저장
-      if (newDetailTravels.length > 0) {
-        await this.detailTravelRepository.save(newDetailTravels);
-      }
-  
-      // initRoute가 비어있지 않은 경우에만 저장
-      if (initRoute.length > 0) {
-        await this.detailTravelRepository.save(initRoute);
-      }
-  
-      // 기존 detailTravels 제거
+      await this.detailTravelRepository.save(newDetailTravels);
+      await this.detailTravelRepository.save(initRoute);
       await this.detailTravelRepository.remove(detailTravels);
     }
   
     return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
   }
+  
   
   // 날짜 범위 계산 함수
   private getDatesInRange(startDate: Date, endDate: Date): string[] {
