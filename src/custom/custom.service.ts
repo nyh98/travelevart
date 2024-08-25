@@ -155,35 +155,35 @@ export class TravelRouteService {
       where: { id: travelrouteId, userId },
       relations: ['detailTravels'],
     });
-
+  
     if (!travelRoute) {
       throw new NotFoundException('여행 루트가 없습니다');
     }
-
+  
     //업데이트할 객체
     let updateObject: Partial<TravelRoute> = { id: travelRoute.id };
-
+  
     //조건에 따라 존재하는 필드만 업데이트함
     if (updateTravelRouteDto.travelName) {
       updateObject.travelName = updateTravelRouteDto.travelName;
     }
-
+  
     if (updateTravelRouteDto.endDate) {
       updateObject.endDate = updateTravelRouteDto.endDate;
     }
-
+  
     if (updateTravelRouteDto.startDate) {
       updateObject.startDate = updateTravelRouteDto.startDate;
     }
-
+  
     if (updateTravelRouteDto.travelrouteRange) {
       updateObject.travelrouteRange = updateTravelRouteDto.travelrouteRange;
     }
-
+  
     //업데이트
     const newRoute = await this.travelRouteRepository.save(updateObject);
-
-    //날짜가 바뀌면
+  
+    // 날짜가 바뀌면
     if (newRoute.startDate || newRoute.endDate) {
       const { detailTravels } = travelRoute;
       const newDetailTravels = detailTravels
@@ -198,36 +198,41 @@ export class TravelRouteService {
           }
         })
         .filter((detail) => detail);
-
+  
       const days = this.getDatesInRange(
         newRoute.startDate ? newRoute.startDate : travelRoute.startDate,
         newRoute.endDate ? newRoute.endDate : travelRoute.endDate,
       );
-
-      const initRoute = days.map((day) => ({
-        travelrouteId: travelRoute.id,
-        date: day,
-      }));
-
+  
+      // 빈 데이터가 생기지 않도록 기존에 데이터가 있는 날짜는 제외
+      const existingDates = new Set(detailTravels.map(detail => new Date(detail.date).toISOString().split('T')[0]));
+  
+      const initRoute = days
+        .filter(day => !existingDates.has(day)) // 데이터가 없는 날짜만 추가
+        .map(day => ({
+          travelrouteId: travelRoute.id,
+          date: day,
+        }));
+  
       await this.detailTravelRepository.save(newDetailTravels);
       await this.detailTravelRepository.save(initRoute);
       await this.detailTravelRepository.remove(detailTravels);
     }
-
+  
     return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
   }
-
+  
   private getDatesInRange(startDate: Date, endDate: Date): string[] {
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dateArray = [];
-
+  
     if (start > end) {
       throw new BadRequestException(
         '시작날은 마지막날 보다 뒤에날이여야 합니다',
       );
     }
-
+  
     // 현재 날짜가 종료 날짜보다 작거나 같을 때까지 반복
     while (start <= end) {
       // 날짜 배열에 추가 (YYYY-MM-DD 형식)
@@ -235,12 +240,13 @@ export class TravelRouteService {
       // 하루 추가
       start.setDate(start.getDate() + 1);
     }
-
+  
     // 시작날 이외의 날짜만 추출
     return dateArray.filter((date, i) => {
       if (i !== 0) return true;
     });
   }
+  
 
   async updateDetailTravels(
     travelrouteId: number,
@@ -451,6 +457,8 @@ export class TravelRouteService {
       userId: userId,
       travelName: travelRoute.travelName,
       travelrouteRange: travelRoute.travelrouteRange,
+      startDate: travelRoute.startDate,
+      endDate: travelRoute.endDate
     });
 
     const savedTravelRoute =
