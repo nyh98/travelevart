@@ -160,10 +160,10 @@ export class TravelRouteService {
       throw new NotFoundException('여행 루트가 없습니다');
     }
   
-    //업데이트할 객체
+    // 업데이트할 객체
     let updateObject: Partial<TravelRoute> = { id: travelRoute.id };
   
-    //조건에 따라 존재하는 필드만 업데이트함
+    // 조건에 따라 존재하는 필드만 업데이트함
     if (updateTravelRouteDto.travelName) {
       updateObject.travelName = updateTravelRouteDto.travelName;
     }
@@ -180,12 +180,14 @@ export class TravelRouteService {
       updateObject.travelrouteRange = updateTravelRouteDto.travelrouteRange;
     }
   
-    //업데이트
+    // 업데이트
     const newRoute = await this.travelRouteRepository.save(updateObject);
   
     // 날짜가 바뀌면
     if (newRoute.startDate || newRoute.endDate) {
       const { detailTravels } = travelRoute;
+  
+      // 새로운 날짜에 맞게 이동하거나 복제된 detailTravels 생성
       const newDetailTravels = detailTravels
         .map((detail, i) => {
           if (detail.placeId) {
@@ -197,31 +199,40 @@ export class TravelRouteService {
             };
           }
         })
-        .filter((detail) => detail);
+        .filter((detail) => detail); // 빈 객체나 null 필터링
   
+      // 날짜 범위 생성
       const days = this.getDatesInRange(
         newRoute.startDate ? newRoute.startDate : travelRoute.startDate,
         newRoute.endDate ? newRoute.endDate : travelRoute.endDate,
       );
   
-      // 빈 데이터가 생기지 않도록 기존에 데이터가 있는 날짜는 제외
-      const existingDates = new Set(detailTravels.map(detail => new Date(detail.date).toISOString().split('T')[0]));
-  
+      // 빈 데이터 방지: placeId가 없는 경우 detail 객체를 생성하지 않음
       const initRoute = days
-        .filter(day => !existingDates.has(day)) // 데이터가 없는 날짜만 추가
-        .map(day => ({
+        .map((day) => ({
           travelrouteId: travelRoute.id,
           date: day,
-        }));
+        }))
+        .filter((detail) => new Date(detail.date) !== newRoute.startDate); // 첫 날 제외
   
-      await this.detailTravelRepository.save(newDetailTravels);
-      await this.detailTravelRepository.save(initRoute);
+      // detailTravels 저장
+      if (newDetailTravels.length > 0) {
+        await this.detailTravelRepository.save(newDetailTravels);
+      }
+  
+      // initRoute가 비어있지 않은 경우에만 저장
+      if (initRoute.length > 0) {
+        await this.detailTravelRepository.save(initRoute);
+      }
+  
+      // 기존 detailTravels 제거
       await this.detailTravelRepository.remove(detailTravels);
     }
   
     return { message: '여행 경로가 성공적으로 업데이트되었습니다.' };
   }
   
+  // 날짜 범위 계산 함수
   private getDatesInRange(startDate: Date, endDate: Date): string[] {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -242,10 +253,9 @@ export class TravelRouteService {
     }
   
     // 시작날 이외의 날짜만 추출
-    return dateArray.filter((date, i) => {
-      if (i !== 0) return true;
-    });
+    return dateArray.filter((date, i) => i !== 0);
   }
+  
   
 
   async updateDetailTravels(
