@@ -5,7 +5,7 @@ import {
   HttpCode,
   Headers,
   BadRequestException,
-  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { KakaoAuthDto } from './dto/kakao-auth.dto';
@@ -53,9 +53,9 @@ export class AuthController {
       newAccessToken = isValidLocalRefreshToken.newAccessToken;
     }
 
-    //카카오, 로컬 둘다 유효하지 않다면 401
+    //카카오, 로컬 둘다 유효하지 않다면 403
     if (!newAccessToken) {
-      throw new UnauthorizedException('세션 만료 다시 로그인 해주세요');
+      throw new ForbiddenException('세션 만료 다시 로그인 해주세요');
     }
 
     return { accessToken: newAccessToken };
