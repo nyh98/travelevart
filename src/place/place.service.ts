@@ -218,36 +218,31 @@ export class PlaceService {
       where: { placeId: place.id, userId },
     });
 
-    try {
-      //기존에 썻던 별점이 있으면 업데이트 없으면 새로 추가
-      if (rating) {
-        await this.ratingRepository.save({
-          ...rating,
-          ratingValue: ratingData.ratingValue,
-          review: ratingData.review,
-        });
-      } else {
-        const utcDate = new Date();
-        const utcOffset = utcDate.getTimezoneOffset() * 60000;
-        const koreaDate = new Date(
-          utcDate.getTime() + utcOffset + 9 * 60 * 60000,
-        );
+    const utcDate = new Date();
+    const utcOffset = utcDate.getTimezoneOffset() * 60000;
+    const koreaDate = new Date(utcDate.getTime() + utcOffset + 9 * 60 * 60000);
 
-        const newRating = this.ratingRepository.create({
-          placeId: place.id,
-          userId,
-          ratingValue: ratingData.ratingValue,
-          review: ratingData.review,
-          createdAt: koreaDate,
-        });
-        await this.ratingRepository.save(newRating);
+    try {
+      const createOrUpdateRating = this.ratingRepository.create({
+        placeId: place.id,
+        userId,
+        ratingValue: ratingData.ratingValue,
+        review: ratingData.review,
+        createdAt: koreaDate,
+      });
+
+      //기존에 썻던 별점이 있으면 기존꺼 삭제후 새로 추가
+      //없으면 새로 추가
+      if (rating) {
+        await this.ratingRepository.remove(rating);
       }
+
+      await this.ratingRepository.save(createOrUpdateRating);
     } catch (e) {
       if (e instanceof QueryFailedError && e.driverError.errno === 3819) {
         throw new BadRequestException('별점은 0~5점만 줄 수 있습니다');
       }
 
-      console.log(e);
       throw new InternalServerErrorException('에러 발생 관리자에게 문의주세요');
     }
   }
