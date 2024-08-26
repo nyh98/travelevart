@@ -12,13 +12,10 @@ export class MailService {
     this.transporter = createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
-      secure: this.configService.get<number>('EMAIL_PORT') === 465, // 포트 465일 때만 secure true
+      secure: true, // 포트 465번을 사용하는 경우 true
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASS'),
-      },
-      tls: {
-        rejectUnauthorized: false, // 필요시 인증서 검증 무시 (일부 환경에서 필요할 수 있음)
       },
     });
   }
