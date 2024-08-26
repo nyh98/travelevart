@@ -57,7 +57,7 @@ export class CommentService {
                 totalPages: Math.ceil(total / pageSize)
             };
         } catch (error) {
-            console.error('Error in getComments:', error); // 에러 로그 추가
+            console.error('Error :', error); // 에러 로그 추가
             throw new HttpException(`GET /comments/:postId 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -106,7 +106,7 @@ export class CommentService {
                 message: "댓글 작성이 완료되었습니다."
             }
         } catch (error) {
-            console.error('Error in getComments:', error); // 에러 로그 추가
+            console.error('Error :', error); // 에러 로그 추가
             throw new HttpException(`POST /comments/:postId 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -126,7 +126,7 @@ export class CommentService {
                 throw new HttpException('댓글을 수정할 권한이 없습니다.', HttpStatus.FORBIDDEN);
             }
         } catch (error) {
-            console.error('Error in getComments:', error); // 에러 로그 추가
+            console.error('Error :', error); // 에러 로그 추가
             throw new HttpException(`PATCH /comments/:commentId 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -135,7 +135,7 @@ export class CommentService {
         try {
             const comment = await this.commentRepository.findOne({ where: { id: commentId }})
             if (!comment) {
-                throw new HttpException('그런 댓글은 없어용~', HttpStatus.NOT_FOUND);
+                throw new HttpException('존재하지 않는 댓글입니다.', HttpStatus.NOT_FOUND);
             }
 
             if (comment.user_id === userId) {

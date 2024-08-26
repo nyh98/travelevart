@@ -17,7 +17,7 @@ export class CommentController {
       return this.commentService.getComments(postId, page);
     } catch (error) {
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || '댓글 조회 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -34,7 +34,7 @@ export class CommentController {
       return await this.commentService.createComment(postId, createCommentDto.contents, req.user.id)
     } catch (error) {
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || '댓글 쓰기 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -51,7 +51,7 @@ export class CommentController {
       return await this.commentService.modifyComment(commentId, createCommentDto.contents, req.user.id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '댓글 수정 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -67,7 +67,7 @@ export class CommentController {
       return await this.commentService.deleteComment(commentId, req.user.id);
     } catch (error) {
       throw new HttpException(
-        error.message || '삐용삐용 에러입니다. 모두 도망치세요!',
+        error.message || '댓글 삭제 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }

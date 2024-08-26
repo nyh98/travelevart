@@ -77,8 +77,8 @@ export class AlertService {
         alerts: formattedAlerts,  // 포맷된 알림 목록
       };
     } catch (error) {
-      console.error('Error in getAlert:', error);
-      throw new HttpException('알림 데이터를 가져오는 중 오류가 발생했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error);
+      throw new HttpException(`GET /alert (알람 조회) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -96,8 +96,8 @@ export class AlertService {
       await this.alertRepository.remove(alert);
       return { message: '알림이 삭제되었습니다.' };
     } catch (error) {
-      console.error('Error in deleteAlert:', error);
-      throw new HttpException('알림 삭제 중 오류가 발생했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error);
+      throw new HttpException(`DELETE /alert/:id (알람 개별 삭제) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -106,8 +106,8 @@ export class AlertService {
       await this.alertRepository.delete({ rec_user_id: userId });
       return { message: '모든 알림이 삭제되었습니다.' };
     } catch (error) {
-      console.error('Error in deleteAllAlerts:', error);
-      throw new HttpException('모든 알림 삭제 중 오류가 발생했습니다.', HttpStatus.INTERNAL_SERVER_ERROR);
+      console.error('Error :', error);
+      throw new HttpException(`DELETE /alert (알람 전체 삭제) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

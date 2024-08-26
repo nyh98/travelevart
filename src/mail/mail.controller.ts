@@ -24,7 +24,7 @@ export class MailController {
       };
     } catch (error) {
       throw new HttpException(
-        error.message || 'Internal server error',
+        error.message || '소원수리함 에러',
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
