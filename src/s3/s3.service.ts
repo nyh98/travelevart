@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 export class S3Service {
   private s3: S3Client;
   private Buket = this.ConfigService.get<string>('AWS_S3_BUCKET_NAME');
+  private cloudFrontUrl = this.ConfigService.get<string>('CLOUDFRONT_URL');
 
   constructor(private ConfigService: ConfigService) {
     this.s3 = new S3Client({
@@ -41,17 +42,17 @@ export class S3Service {
       throw new BadRequestException('파일 업로드에 실패했습니다');
     }
 
-    const imgUrl = `https://${params.Bucket}.s3.${this.ConfigService.get<string>('AWS_REGION')}.amazonaws.com/${key}`;
+    const imgUrl = `${this.cloudFrontUrl}/${key}`;
     return imgUrl;
   }
 
   async deleteFile(imgUrl: string) {
-    const key = imgUrl.split('travelevart')[1];
+    const key = imgUrl.replace(this.cloudFrontUrl + '/', '');
 
     if (key) {
       const command = new DeleteObjectCommand({
         Bucket: this.Buket,
-        Key: `travelevart${key}`,
+        Key: key
       });
 
       await this.s3.send(command);
