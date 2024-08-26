@@ -12,10 +12,13 @@ export class MailService {
     this.transporter = createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
-      secure: false,
+      secure: this.configService.get<number>('EMAIL_PORT') === 465, // 포트 465일 때만 secure true
       auth: {
         user: this.configService.get<string>('EMAIL_USER'),
         pass: this.configService.get<string>('EMAIL_PASS'),
+      },
+      tls: {
+        rejectUnauthorized: false, // 필요시 인증서 검증 무시 (일부 환경에서 필요할 수 있음)
       },
     });
   }
@@ -25,14 +28,14 @@ export class MailService {
       const mailOptions = {
         from: this.configService.get<string>('EMAIL_USER'),
         to: this.configService.get<string>('EMAIL_RECEIVER'),
-        subject: "무니 메일",
+        subject: "문의 메일",
         text,
       };
 
       return this.transporter.sendMail(mailOptions);
     } catch (error) {
       console.error('Error :', error); // 에러 로그 추가
-      throw new HttpException(`GET /posts (일반 게시물) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`POST /mail (소원수리함) 에러입니다. ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     };
   }
 }
