@@ -219,28 +219,39 @@ export class TravelRouteService {
     updateRequest: UpdateDetailTravelDto,
   ): Promise<any> {
     const { transportOption, items } = updateRequest;
-
+  
     for (const item of items) {
       const { date, details } = item;
-
-      // 해당 날짜의 기존 detailTravels를 가져옵니다.
+  
+      // 해당 날짜의 기존 detailTravels를 가져옴
       const detailTravels = await this.detailTravelRepository.find({
         where: { travelrouteId, date },
       });
-
-      // 날짜가 일치하는 일정이 없으면 빈 배열로 초기화합니다.
-      if (!detailTravels || detailTravels.length === 0) {
-        throw new NotFoundException(
-          `해당 여행 경로 및 날짜 (${date})에 대한 정보 업서용.`,
-        );
+  
+      // 삭제할 항목 필터링
+      const updatedDetails = details.map(
+        (detail) => `${detail.routeIndex}-${detail.placeId}`,
+      );
+  
+      const detailsToDelete = detailTravels.filter(
+        (detailTravel) =>
+          !updatedDetails.includes(
+            `${detailTravel.routeIndex}-${detailTravel.placeId}`,
+          ),
+      );
+  
+      // 삭제 작업
+      if (detailsToDelete.length > 0) {
+        await this.detailTravelRepository.remove(detailsToDelete);
       }
-
+  
       for (const detail of details) {
         let detailTravel = detailTravels.find(
-          (dt) => dt.routeIndex === detail.routeIndex,
+          (dt) =>
+            dt.routeIndex === detail.routeIndex && dt.placeId === detail.placeId,
         );
-
-        // 해당 routeIndex가 존재하지 않으면 새로운 일정을 추가합니다.
+  
+        // 새로운 일정을 추가하기 위해 routeIndex와 placeId가 없으면 생성
         if (!detailTravel) {
           detailTravel = this.detailTravelRepository.create({
             travelrouteId,
@@ -251,8 +262,8 @@ export class TravelRouteService {
             mapLink: detail.mapLink,
           });
         }
-
-        // 장소 정보가 제공된 경우
+  
+        // 장소 정보가 제공된 경우 업데이트
         if (detail.placeId) {
           const place = await this.placeRepository.findOne({
             where: { id: detail.placeId },
@@ -266,20 +277,21 @@ export class TravelRouteService {
           detailTravel.placeTitle = place.title;
           detailTravel.regionId = place.regionId;
         }
-
+  
         // transportOption 업데이트
         detailTravel.transportOption = transportOption;
-
+  
         // 나머지 필드 업데이트 (메모 및 지도 링크)
         detailTravel.contents = detail.contents ?? detailTravel.contents;
         detailTravel.mapLink = detail.mapLink ?? detailTravel.mapLink;
-
+  
         await this.detailTravelRepository.save(detailTravel);
       }
     }
-
+  
     return { message: '성공' };
   }
+  
   async getTravelRoute(
     userId: number,
     page: number,
