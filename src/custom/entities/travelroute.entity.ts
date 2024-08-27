@@ -18,7 +18,6 @@ export class TravelRoute {
   
   @Column({
     type: 'tinyint',
-    default: 0,
   })
   travelrouteRange: number;
 
