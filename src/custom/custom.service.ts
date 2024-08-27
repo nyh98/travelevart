@@ -54,7 +54,6 @@ export class TravelRouteService {
       ...createTravelRouteDto,
       userId: userId,
     });
-    console.log('Created Travel Route:', travelRoute);
     return this.travelRouteRepository.save(travelRoute);
   }
   async addDetailToTravelRoute(
