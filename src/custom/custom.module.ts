@@ -16,35 +16,52 @@ import { authOptionMiddleware } from 'src/auth/auth-option.middleware';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Alert ,TravelRoute, DetailTravel, User, Place, Region, Post, Alert]),
+    TypeOrmModule.forFeature([
+      Alert,
+      TravelRoute,
+      DetailTravel,
+      User,
+      Place,
+      Region,
+      Post,
+      Alert,
+    ]),
     AuthModule,
-    AlertModule
+    AlertModule,
   ],
   controllers: [TravelRouteController],
   providers: [TravelRouteService],
 })
 export class TravelRouteModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-    .apply(authMiddleware)
-    .forRoutes(
+    consumer.apply(authMiddleware).forRoutes(
       { path: 'travelroutes/:userId', method: RequestMethod.GET },
       { path: 'travelroutes/:travelrouteId', method: RequestMethod.PATCH },
-      { path: 'travelroutes/:travelrouteId/details', method: RequestMethod.PATCH },
+      {
+        path: 'travelroutes/:travelrouteId/details',
+        method: RequestMethod.PATCH,
+      },
       { path: 'travelroutes/:travelrouteId', method: RequestMethod.DELETE },
-      { path: 'travelroutes/:travelrouteId/details', method: RequestMethod.DELETE },
-      { path: 'travelroutes/:travelrouteId/details', method: RequestMethod.POST },
-      { path: 'travelroutes/:travelrouteId/recommendation', method: RequestMethod.POST },
+      {
+        path: 'travelroutes/:travelrouteId/details',
+        method: RequestMethod.DELETE,
+      },
+      {
+        path: 'travelroutes/:travelrouteId/details',
+        method: RequestMethod.POST,
+      },
+      {
+        path: 'travelroutes/:travelrouteId/recommendation',
+        method: RequestMethod.POST,
+      },
       { path: 'travelroutes/fork/:postId', method: RequestMethod.POST },
       { path: 'travelroutes', method: RequestMethod.POST },
-      
+      { path: 'travelroutes/recommendations', method: RequestMethod.POST },
     );
 
-    consumer
-    .apply(authOptionMiddleware)
-    .forRoutes(
-      { path: 'travelroutes/:travelrouteId/details', method: RequestMethod.GET },
-    ) 
+    consumer.apply(authOptionMiddleware).forRoutes({
+      path: 'travelroutes/:travelrouteId/details',
+      method: RequestMethod.GET,
+    });
   }
-  
 }
