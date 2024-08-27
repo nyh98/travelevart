@@ -75,7 +75,7 @@ export class AuthService {
       provider: 'local',
       user_name: localJoinData.nickname,
       profile_img:
-        'http://t1.kakaocdn.net/account_images/default_profile.jpeg.twg.thumb.R640x640',
+        'https://img1.kakaocdn.net/thumb/R640x640.q70/?fname=http://t1.kakaocdn.net/account_images/default_profile.jpeg',
       email: localJoinData.email,
       password: await bcrypt.hash(localJoinData.password, 12),
     });
@@ -113,7 +113,7 @@ export class AuthService {
 
     const payload = { userId: user.id };
     const accessToken = await this.JwtService.signAsync(payload, {
-      expiresIn: '2h',
+      expiresIn: '5m',
     });
     const refeshToken = await this.JwtService.signAsync(payload, {
       expiresIn: '7d',
