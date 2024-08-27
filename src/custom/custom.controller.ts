@@ -150,10 +150,6 @@ export class TravelRouteController {
     @Res() res: Response,
   ) {
     try {
-      const user = req.user;
-      if (!user) {
-        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
-      }
       const result =
         await this.travelRouteService.getDetailTravel(travelrouteId);
       return res.status(HttpStatus.OK).json(result);
