@@ -91,8 +91,8 @@ export class PostService implements OnModuleInit {
       .addSelect('user.id')
       .addSelect('user.user_name') // 필요한 유저 정보만 선택
       .addSelect('user.profile_img')
-      .addSelect('COUNT(DISTINCT comment.id) AS commentCount') // 댓글 수 계산
-      .addSelect('COUNT(DISTINCT postlike.id) AS likeCount') // 좋아요 수 계산
+      .addSelect('COUNT(DISTINCT comment.id)', 'commentCount') // 댓글 수 계산
+      .addSelect('COUNT(DISTINCT postlike.id)', 'likeCount') // 좋아요 수 계산
       .groupBy('post.id') // 게시물별로 그룹화
       .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
       .orderBy('post.created_at', 'DESC') // 게시글을 최신순으로 정렬
@@ -130,7 +130,7 @@ export class PostService implements OnModuleInit {
       }
 
       // TravelRoute 및 DetailTravels 데이터를 개별적으로 가져오기
-      const postDetailPromises = posts.map(async (post, index) => {
+      const postDetailPromises = posts.map(async (post) => {
         let detailTravels = [];
 
         if (post.travelRoute_id) {
@@ -146,6 +146,8 @@ export class PostService implements OnModuleInit {
           })) : [];
         }
 
+        const relatedRawPosts = rawPosts.filter(raw => raw.post_id === post.id);
+
         return {
           id: post.id,
           author: post.user.user_name,
@@ -153,10 +155,10 @@ export class PostService implements OnModuleInit {
           profileImg: post.user.profile_img,
           title: post.title,
           views: post.view_count,
-          commentCount: parseInt(rawPosts[index].commentCount, 10) || 0,
+          commentCount: parseInt(relatedRawPosts[0].commentCount, 10) || 0,
           created_at: post.created_at,
           travelRoute_id: post.travelRoute_id,
-          like: parseInt(rawPosts[index].likeCount, 10) || 0,
+          like: parseInt(relatedRawPosts[0].likeCount, 10) || 0,
           detailTravels: detailTravels,
           contents: post.postContents
             .sort((a, b) => a.order - b.order)
@@ -171,7 +173,7 @@ export class PostService implements OnModuleInit {
                 title: travelDetail.title || '',
               }
           }),
-          isLiked: rawPosts[index].isLiked == 1
+          isLiked: relatedRawPosts[0].isLiked == 1
         };
       });
       const postDetails = await Promise.all(postDetailPromises);
