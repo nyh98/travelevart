@@ -52,7 +52,7 @@ export class TravelRouteService {
 
     const travelRoute = this.travelRouteRepository.create({
       ...createTravelRouteDto,
-      userId: userId,
+      userId: userId, 
     });
     return this.travelRouteRepository.save(travelRoute);
   }
@@ -310,9 +310,9 @@ export class TravelRouteService {
     });
 
     if (!travelRoutes || travelRoutes.length === 0) {
-      throw new NotFoundException(
-        '해당 사용자의 여행 경로를 찾을 수 없습니다.',
-      );
+      return {
+        message: '해당 사용자의 여행 경로를 찾을 수 없습니다.',
+      };
     }
 
     const totalPage = Math.ceil(totalRoutesCount / pageSize);
@@ -350,7 +350,9 @@ export class TravelRouteService {
     });
 
     if (!detailTravels || detailTravels.length === 0) {
-      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+      return {
+        message: '해당 사용자의 여행 경로를 찾을 수 없습니다.',
+      };    
     }
 
     const groupedByDate = detailTravels.reduce((acc, detail) => {
@@ -394,21 +396,24 @@ export class TravelRouteService {
       items: Object.values(groupedByDate),
     };
   }
-  async deleteTravelRoute(travelrouteId: number): Promise<void> {
+  async deleteTravelRoute(travelrouteId: number): Promise<any> {
     const travelRoute = await this.travelRouteRepository.findOne({
       where: { id: travelrouteId },
     });
     if (!travelRoute) {
-      throw new NotFoundException('여행 경로를 찾을 수 없습니다.');
-    }
+      return {
+        message: '해당 사용자의 여행 경로를 찾을 수 없습니다.',
+      };    }
     await this.travelRouteRepository.remove(travelRoute);
   }
-  async deleteDetailTravel(detailtravelId: number): Promise<void> {
+  async deleteDetailTravel(detailtravelId: number): Promise<any> {
     const detailTravel = await this.detailTravelRepository.findOne({
       where: { id: detailtravelId },
     });
     if (!detailTravel) {
-      throw new NotFoundException('세부 여행 정보를 찾을 수 없습니다.');
+      return {
+        message: '해당 사용자의 여행 경로를 찾을 수 없습니다.',
+      };
     }
     await this.detailTravelRepository.remove(detailTravel);
   }
