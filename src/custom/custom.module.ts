@@ -46,7 +46,7 @@ export class TravelRouteModule {
         method: RequestMethod.DELETE,
       },
       {
-        path: 'travelroutes/:travelrouteId/details',
+        path: 'travelroutes/:travelrouteId',
         method: RequestMethod.POST,
       },
       { path: 'travelroutes/fork/:postId', method: RequestMethod.POST },

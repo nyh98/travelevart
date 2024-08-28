@@ -213,6 +213,12 @@ export class TravelRouteController {
     @Res() res: Response,
   ) {
     try {
+      const user = req.user;
+      if (!user) {
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
+      }
       const fork = await this.travelRouteService.forkPost(req.user.id, postId);
       return res.status(HttpStatus.CREATED).json(fork);
     } catch (error) {
@@ -266,7 +272,9 @@ export class TravelRouteController {
     try {
       const user = req.user;
       if (!user) {
-        throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
+        return res
+          .status(HttpStatus.UNAUTHORIZED)
+          .json({ message: 'Unauthorized' });
       }
 
       const detailTravels =
