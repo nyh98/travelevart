@@ -232,12 +232,10 @@ export class PostService implements OnModuleInit {
     let query = this.postRepository.createQueryBuilder('post')
       .leftJoin('post.postlike', 'postlike')
       .leftJoin('post.user', 'user')
-      .leftJoinAndSelect('post.postContents', 'postContents')
       .addSelect('user.user_name')
       .addSelect('user.profile_img')
       .addSelect('COUNT(postlike.id) * 2 + post.view_count AS score')
       .groupBy('post.id')
-      .addGroupBy('postContents.id') // 그룹화를 postContents.id로 추가
       .orderBy('score', 'DESC')
       .limit(5);
 
@@ -250,34 +248,13 @@ export class PostService implements OnModuleInit {
     const rawPosts = await query.getRawAndEntities();
     const posts = rawPosts.entities;
 
-    const postDetailPromises = posts.map(async (post, index) => {
-      let detailTravels = [];
-
-      if (post.travelRoute_id) {
-        const travelRoute = await this.travelRouteRepository.createQueryBuilder('travelroute')
-          .leftJoinAndSelect('travelroute.detailTravels', 'detailtravel')
-          .where('travelroute.id = :travelRouteId', { travelRouteId: post.travelRoute_id })
-          .orderBy('detailtravel.date', 'ASC')
-          .getOne();
-
-        detailTravels = travelRoute?.detailTravels ? travelRoute.detailTravels.map(travel => ({
-          image: travel.placeImage,
-        })) : [];
-      }
+    const postDetailPromises = posts.map(async (post) => {
 
       return {
         id: post.id,
         author: post.user.user_name,
         profileImg: post.user.profile_img,        
         title: post.title,
-        detailTravels: detailTravels,
-        contents: post.postContents.map(content => ({
-          id: content.id,
-          postId: content.post_id,
-          order: content.order,
-          text: content.contents,
-          image: content.contents_img
-        })),
       };
     });
 

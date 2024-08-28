@@ -89,8 +89,6 @@ export interface PopularPostDetailDto {
     author: string;
     profileImg: string
     title: string;
-    detailTravels: DetailTravelDto[];
-    contents?: PostContentDto[];
 }
 
 export interface DetailTravelDto {
