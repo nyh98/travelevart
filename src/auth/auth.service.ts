@@ -113,7 +113,7 @@ export class AuthService {
 
     const payload = { userId: user.id };
     const accessToken = await this.JwtService.signAsync(payload, {
-      expiresIn: '5m',
+      expiresIn: '1m',
     });
     const refeshToken = await this.JwtService.signAsync(payload, {
       expiresIn: '7d',
@@ -190,7 +190,9 @@ export class AuthService {
       }
 
       const payload = { userId: decode.userId };
-      const newAccessToken = await this.JwtService.signAsync(payload);
+      const newAccessToken = await this.JwtService.signAsync(payload, {
+      expiresIn: '1m',
+    });
       return { newAccessToken };
     } catch (e) {
       return false;
