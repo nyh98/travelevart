@@ -41,6 +41,7 @@
     "mysql2": "^3.10.3",
     "nodemailer": "^6.9.14",
     "openai": "^4.54.0",
+    "pm2": "^6.0.5",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
