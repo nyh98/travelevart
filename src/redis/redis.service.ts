@@ -21,39 +21,39 @@ export class RedisService {
 
   // 인기 Stories 캐시 관리
   async setPopularTravelPostsCache(value: string, ttl: number) {
-    const cacheKey = 'popularTravelPosts';
-    this.logger.debug(`인기 Stories 캐시 저장: ${cacheKey}`);
-    await this.redis.set(cacheKey, value, 'EX', ttl);
+    // const cacheKey = 'popularTravelPosts';
+    // this.logger.debug(`인기 Stories 캐시 저장: ${cacheKey}`);
+    // await this.redis.set(cacheKey, value, 'EX', ttl);
   }
 
-  async getPopularTravelPostsCache(): Promise<string | null> {
-    const cacheKey = 'popularTravelPosts';
-    this.logger.debug(`인기 Stories 캐시 호출: ${cacheKey}`);
-    return await this.redis.get(cacheKey);
+  async getPopularTravelPostsCache() {
+    // const cacheKey = 'popularTravelPosts';
+    // this.logger.debug(`인기 Stories 캐시 호출: ${cacheKey}`);
+    // return await this.redis.get(cacheKey);
   }
 
   async deletePopularTravelPostsCache() {
-    const cacheKey = 'popularTravelPosts';
-    this.logger.debug(`인기 Stories 캐시 삭제: ${cacheKey}`);
-    await this.redis.del(cacheKey);
+    // const cacheKey = 'popularTravelPosts';
+    // this.logger.debug(`인기 Stories 캐시 삭제: ${cacheKey}`);
+    // await this.redis.del(cacheKey);
   }
 
   // 인기 Questions 캐시 관리
   async setPopularNormalPostsCache(value: string, ttl: number) {
-    const cacheKey = 'popularNormalPosts';
-    this.logger.debug(`인기 Questions 캐시 저장: ${cacheKey}`);
-    await this.redis.set(cacheKey, value, 'EX', ttl);
+    // const cacheKey = 'popularNormalPosts';
+    // this.logger.debug(`인기 Questions 캐시 저장: ${cacheKey}`);
+    // await this.redis.set(cacheKey, value, 'EX', ttl);
   }
 
-  async getPopularNormalPostsCache(): Promise<string | null> {
-    const cacheKey = 'popularNormalPosts';
-    this.logger.debug(`인기 Questions 캐시 호출: ${cacheKey}`);
-    return await this.redis.get(cacheKey);
+  async getPopularNormalPostsCache() {
+    // const cacheKey = 'popularNormalPosts';
+    // this.logger.debug(`인기 Questions 캐시 호출: ${cacheKey}`);
+    // return await this.redis.get(cacheKey);
   }
 
   async deletePopularNormalPostsCache() {
-    const cacheKey = 'popularNormalPosts';
-    this.logger.debug(`인기 Questions 캐시 삭제: ${cacheKey}`);
-    await this.redis.del(cacheKey);
+    // const cacheKey = 'popularNormalPosts';
+    // this.logger.debug(`인기 Questions 캐시 삭제: ${cacheKey}`);
+    // await this.redis.del(cacheKey);
   }
 }

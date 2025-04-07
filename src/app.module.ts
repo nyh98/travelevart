@@ -10,7 +10,7 @@ import { CartModule } from './cart/cart.module';
 import { DiaryModule } from './diary/diary.module';
 import { MailModule } from './mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { RedisModule } from './redis/redis.module';
+// import { RedisModule } from './redis/redis.module';
 import { ScheduleModule } from './schedule/schedule.module';
 import { S3Module } from './s3/s3.module';
 import { TravelRouteModule } from './custom/custom.module';
@@ -46,7 +46,7 @@ import { HealthcheckModule } from './healthcheck/healthcheck.module';
     TravelRouteModule,
     DiaryModule,
     MailModule,
-    RedisModule,
+    // RedisModule,
     ScheduleModule,
     S3Module,
     GptModule,

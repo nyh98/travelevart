@@ -16,7 +16,7 @@ import { JwtService } from '@nestjs/jwt';
 import { LocalJoinAuthDto, LocalLoginAuthDto } from './dto/local-auth.dto';
 import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
-import { RedisService } from 'src/redis/redis.service';
+// import { RedisService } from 'src/redis/redis.service';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class AuthService {
     @InjectRepository(User) private userRepository: Repository<User>,
     private JwtService: JwtService,
     private HttpService: HttpService,
-    private RedisService: RedisService,
+    // private RedisService: RedisService,
     private ConfigService: ConfigService,
   ) {}
 
@@ -113,17 +113,17 @@ export class AuthService {
 
     const payload = { userId: user.id };
     const accessToken = await this.JwtService.signAsync(payload, {
-      expiresIn: '1m',
+      expiresIn: '1h',
     });
     const refeshToken = await this.JwtService.signAsync(payload, {
       expiresIn: '7d',
     });
 
-    this.RedisService.setRefreshToken(
-      user.id.toString(),
-      refeshToken,
-      60 * 60 * 24 * 7,
-    );
+    // this.RedisService.setRefreshToken(
+    //   user.id.toString(),
+    //   refeshToken,
+    //   60 * 60 * 24 * 7,
+    // );
     return {
       userInfo: {
         userId: user.id,
@@ -183,16 +183,16 @@ export class AuthService {
         refreshToken,
       );
 
-      const token = await this.RedisService.getRefreshToken(decode.userId);
+      // const token = await this.RedisService.getRefreshToken(decode.userId);
 
-      if (!token || token !== refreshToken) {
-        return false;
-      }
+      // if (!token || token !== refreshToken) {
+      //   return false;
+      // }
 
       const payload = { userId: decode.userId };
       const newAccessToken = await this.JwtService.signAsync(payload, {
-      expiresIn: '1m',
-    });
+        expiresIn: '1h',
+      });
       return { newAccessToken };
     } catch (e) {
       return false;
@@ -233,7 +233,7 @@ export class AuthService {
       const user = await this.userRepository.findOne({
         where: { id: decoded.userId },
       });
-      await this.RedisService.deleteRefreshToken(user.id);
+      // await this.RedisService.deleteRefreshToken(user.id);
     } catch (e) {}
   }
 }

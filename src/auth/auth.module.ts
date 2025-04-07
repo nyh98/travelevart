@@ -6,11 +6,11 @@ import { User } from 'src/user/entities/user.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
-import { RedisModule } from 'src/redis/redis.module';
+// import { RedisModule } from 'src/redis/redis.module';
 
 @Module({
   imports: [
-    RedisModule,
+    // RedisModule,
     TypeOrmModule.forFeature([User]),
     JwtModule.registerAsync({
       global: true,
